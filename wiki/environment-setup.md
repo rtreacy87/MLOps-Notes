@@ -70,7 +70,9 @@ az ml -h
 
 ## 3. Set Up Python Environment
 
-Azure ML SDK requires Python. We'll set up a virtual environment for our ML work.
+Azure ML SDK requires Python. You can set up either a virtual environment or a conda environment for your ML work.
+
+### Option A: Python Virtual Environment
 
 ```bash
 # Install Python (if not already installed)
@@ -87,6 +89,208 @@ source ~/azureml-env/bin/activate  # Linux/macOS
 
 # Install Azure ML SDK
 pip install azure-ai-ml azure-identity
+```
+
+### Option B: Conda Environment
+
+Conda environments are particularly useful for ML projects as they handle package dependencies well and support both Python and non-Python libraries.
+
+#### 1. Install Miniconda or Anaconda
+
+**Linux:**
+```bash
+# Download Miniconda installer
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+
+# Install Miniconda silently
+bash ~/miniconda.sh -b -p $HOME/miniconda
+
+# Add conda to path
+eval "$($HOME/miniconda/bin/conda shell.bash hook)"
+
+# Initialize conda for shell integration
+conda init
+```
+
+**macOS:**
+```bash
+# Using Homebrew
+brew install --cask miniconda
+
+# Initialize conda for shell integration
+conda init
+```
+
+**Windows:**
+```bash
+# Download the installer from https://docs.conda.io/en/latest/miniconda.html
+# Run the installer and follow the prompts
+
+# Open Anaconda Prompt from the Start Menu after installation
+```
+
+#### 2. Create a Conda Environment for Azure ML
+
+```bash
+# Create a new conda environment with Python 3.8
+conda create -n azureml python=3.8
+
+# Activate the environment
+conda activate azureml
+
+# Install Azure ML SDK and other common ML packages
+pip install azure-ai-ml azure-identity
+conda install -c conda-forge numpy pandas scikit-learn matplotlib jupyter
+
+# For deep learning (optional)
+conda install -c pytorch pytorch torchvision
+# or
+# conda install -c tensorflow tensorflow
+```
+
+#### 3. Working with Conda Environment YAML Files
+
+Conda environment YAML files are essential for reproducible ML environments. They allow you to define, share, and recreate environments consistently across different machines.
+
+##### Creating a Basic Environment YAML File
+
+```bash
+# Create a basic environment.yml file
+cat > environment.yml << EOF
+name: azureml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip=21.0
+  - numpy=1.20
+  - pandas=1.3
+  - scikit-learn=1.0
+  - matplotlib=3.4
+  - jupyter=1.0
+  - pip:
+    - azure-ai-ml==1.4.0
+    - azure-identity==1.12.0
+EOF
+```
+
+##### Understanding the YAML Structure
+
+- `name`: The name of the environment
+- `channels`: Package sources (conda-forge often has more up-to-date packages)
+- `dependencies`: List of conda packages to install
+- `pip`: Nested under dependencies, lists packages to install via pip
+
+##### Creating an Environment from a YAML File
+
+```bash
+# Create the environment from the file
+conda env create -f environment.yml
+
+# Activate the environment
+conda activate azureml
+```
+
+##### Exporting an Existing Environment to a YAML File
+
+```bash
+# Activate the environment you want to export
+conda activate azureml
+
+# Export the exact environment with all dependencies
+conda env export > environment_full.yml
+
+# Export a more cross-platform compatible environment file
+conda env export --from-history > environment.yml
+```
+
+The `--from-history` flag creates a simpler YAML that only includes packages you explicitly installed, making it more portable across platforms.
+
+##### Updating a YAML File After Adding New Packages
+
+After installing new packages in your environment, you should update your YAML file:
+
+```bash
+# First, activate your environment
+conda activate azureml
+
+# Install new packages
+conda install -c conda-forge xgboost lightgbm
+pip install optuna mlflow
+
+# Update your environment file
+conda env export --from-history > environment_updated.yml
+```
+
+##### Creating a Minimal YAML File Manually
+
+For better control, you can create a minimal YAML file that only specifies the direct dependencies:
+
+```bash
+cat > environment_minimal.yml << EOF
+name: azureml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - jupyter
+  - xgboost
+  - lightgbm
+  - pip:
+    - azure-ai-ml
+    - azure-identity
+    - optuna
+    - mlflow
+EOF
+```
+
+##### Updating an Environment from an Updated YAML File
+
+```bash
+# Update an existing environment from a YAML file
+conda env update -f environment_updated.yml --prune
+```
+
+The `--prune` option removes dependencies that were removed from the YAML file.
+
+##### Sharing Environment Files with Your Team
+
+```bash
+# Best practices for sharing environment files
+
+# 1. Keep environment.yml in version control
+git add environment.yml
+git commit -m "Update environment with new ML packages"
+
+# 2. Document environment changes in commit messages
+
+# 3. Consider platform-specific environment files if needed
+# environment_linux.yml, environment_macos.yml, etc.
+```
+
+#### 4. Managing Conda Environments
+
+```bash
+# List all conda environments
+conda env list
+
+# Update all packages in current environment
+conda update --all
+
+# Clone an environment
+conda create --name azureml_clone --clone azureml
+
+# Remove an environment
+conda env remove -n azureml
+
+# Deactivate the current environment
+conda deactivate
 ```
 
 ## 4. Configure Azure Authentication
@@ -246,6 +450,13 @@ var/
 venv/
 ENV/
 
+# Conda Environment
+.conda/
+miniconda/
+anaconda/
+.anaconda/
+environment.yml
+
 # Azure ML
 outputs/
 .azureml/
@@ -316,11 +527,31 @@ az extension add -n ml
 
 ### Python Environment Issues
 
+**Virtual Environment:**
 ```bash
 # If you encounter Python package conflicts, create a fresh environment
 python3 -m venv ~/azureml-env-new
 source ~/azureml-env-new/bin/activate
 pip install azure-ai-ml azure-identity
+```
+
+**Conda Environment:**
+```bash
+# If you encounter conda environment issues
+
+# Recreate the environment
+conda env remove -n azureml
+conda create -n azureml python=3.8
+conda activate azureml
+pip install azure-ai-ml azure-identity
+
+# If conda commands aren't recognized
+source ~/miniconda3/bin/activate  # Linux/macOS
+# or
+# %USERPROFILE%\miniconda3\Scripts\activate  # Windows
+
+# Update conda itself if needed
+conda update -n base -c defaults conda
 ```
 
 ## Next Steps
