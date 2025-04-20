@@ -53,13 +53,16 @@ Optimize resource usage and manage budgets for ML workloads.
 ### 10. [Security Best Practices](wiki/security-practices.md)
 Implement secure configurations for your ML environments.
 
-### 11. [Infrastructure as Code](wiki/infrastructure-as-code.md)
+### 11. [Password Management and Security](wiki/security-password-management.md)
+Best practices for managing credentials and secrets securely in MLOps workflows.
+
+### 12. [Infrastructure as Code](wiki/infrastructure-as-code.md)
 Manage ML infrastructure using ARM templates, Terraform, and Bicep.
 
-### 12. [Azure Ecosystem Integration](wiki/azure-ecosystem.md)
+### 13. [Azure Ecosystem Integration](wiki/azure-ecosystem.md)
 Connect with other Azure services like Databricks and Synapse Analytics.
 
-### 13. [Advanced Features](wiki/advanced-features.md)
+### 14. [Advanced Features](wiki/advanced-features.md)
 Leverage automated ML and model interpretability tools.
 
 ## Daily Workflows

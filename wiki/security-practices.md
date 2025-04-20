@@ -340,6 +340,7 @@ az monitor activity-log list \
 
 ## Next Steps
 
+- Learn about [Password Management and Security](security-password-management.md) for securely handling credentials
 - Implement [infrastructure as code](11.infrastructure-as-code.md) for your ML resources
 - Learn about [Azure ecosystem integration](azure-ecosystem.md) for secure ML workflows
 - Explore [advanced features](advanced-features.md) with security considerations

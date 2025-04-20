@@ -154,6 +154,8 @@ az account set --subscription <subscription-id>
 az account show
 ```
 
+> **Security Note**: When working with Azure credentials, always follow secure practices for managing secrets. See the [Password Management and Security](security-password-management.md) wiki for detailed guidance on securely handling credentials.
+
 ### Creating a Configuration File
 
 ```bash
@@ -168,7 +170,13 @@ cat > ~/.azureml/config.json << EOF
     "workspace_name": "<workspace-name>"
 }
 EOF
+
+# Set proper permissions to restrict access
+chmod 600 ~/.azureml/config.json
+chmod 700 ~/.azureml
 ```
+
+> **Security Warning**: Configuration files often contain sensitive information. Never commit them to version control, always set restrictive file permissions, and consider using a password manager or Azure Key Vault for storing sensitive values. See the [Password Management and Security](security-password-management.md) wiki for more information.
 
 ## VS Code Integration with Azure ML
 
@@ -1040,6 +1048,19 @@ environment.yml
 # Azure ML
 outputs/
 .azureml/
+
+# Security and credentials
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+*_rsa
+*_dsa
+*_ed25519
+*_ecdsa
+secrets/
+.password-store/
 
 # VS Code
 .vscode/*
