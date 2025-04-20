@@ -118,7 +118,7 @@ name: sql-data
 version: 1
 description: Data from SQL query
 type: mltable
-path: 
+path:
   sql_query: SELECT * FROM my_table
   datastore: sql_datastore
 EOF
@@ -284,8 +284,8 @@ outputs:
 code: ./src
 environment: azureml:data-prep-env:1
 command: >-
-  python prepare_data.py 
-  --input-data ${{inputs.input_data}} 
+  python prepare_data.py
+  --input-data ${{inputs.input_data}}
   --output-data ${{outputs.output_data}}
 EOF
 
@@ -299,11 +299,11 @@ jobs:
     type: command
     component: azureml:data_preparation:1
     inputs:
-      input_data: 
+      input_data:
         path: azureml://datastores/<datastore-name>/paths/<container-path>/
         mode: ro_mount
     outputs:
-      output_data: 
+      output_data:
         mode: rw_mount
 compute: azureml:<compute-name>
 EOF
@@ -311,6 +311,81 @@ EOF
 # Submit the pipeline
 az ml job create --file data-pipeline.yml \
                  --workspace-name <workspace-name> --resource-group <resource-group>
+```
+
+## Batch Data Transfer with AzCopy
+
+AzCopy is a command-line utility that provides high-performance data transfer to and from Azure Storage. It's particularly useful for batch operations and large-scale data transfers.
+
+### Installing AzCopy
+
+```bash
+# Download AzCopy (Linux)
+wget https://aka.ms/downloadazcopy-v10-linux
+tar -xvf downloadazcopy-v10-linux
+sudo cp ./azcopy_linux_amd64_*/azcopy /usr/bin/
+
+# Download AzCopy (macOS)
+brew install azcopy
+
+# Download AzCopy (Windows PowerShell)
+Invoke-WebRequest -Uri "https://aka.ms/downloadazcopy-v10-windows" -OutFile AzCopy.zip
+Expand-Archive ./AzCopy.zip ./AzCopy -Force
+$PathToAzCopy = Get-ChildItem ./AzCopy/*/azcopy.exe | % {$_.FullName}
+# Add to PATH or use the full path
+```
+
+### Authentication with AzCopy
+
+```bash
+# Login with Microsoft Entra ID (formerly Azure AD)
+azcopy login
+
+# Login with SAS token (no need to run login command)
+# Just append SAS token to URLs in commands
+```
+
+### Batch Upload to Blob Storage
+
+```bash
+# Upload a directory and all subdirectories to a container
+azcopy copy "/local/path/to/directory" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive
+
+# Upload with pattern matching (only .csv and .parquet files)
+azcopy copy "/local/path/to/directory" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --include-pattern "*.csv;*.parquet"
+
+# Upload with SAS token
+azcopy copy "/local/path/to/directory" "https://<storage-account-name>.blob.core.windows.net/<container-name>?<sas-token>" --recursive
+
+# Upload with metadata
+azcopy copy "/local/path/to/file.csv" "https://<storage-account-name>.blob.core.windows.net/<container-name>/file.csv" --metadata="project=mlops;dataset=training"
+
+# Upload with blob tags (requires appropriate permissions)
+azcopy copy "/local/path/to/file.csv" "https://<storage-account-name>.blob.core.windows.net/<container-name>/file.csv" --blob-tags="project=mlops&dataset=training"
+```
+
+### Performance Optimization for Large Transfers
+
+```bash
+# Increase concurrency for faster uploads (default is 32 * CPU cores)
+export AZCOPY_CONCURRENCY_VALUE=256  # Linux/macOS
+set AZCOPY_CONCURRENCY_VALUE=256     # Windows
+
+# Limit bandwidth usage (in Megabits per second)
+azcopy copy "/local/path/to/directory" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --cap-mbps 100
+
+# Run a benchmark test to optimize performance
+azcopy benchmark "https://<storage-account-name>.blob.core.windows.net/<container-name>"
+```
+
+### Synchronizing Directories
+
+```bash
+# Sync local directory to blob container (upload only new or modified files)
+azcopy sync "/local/path/to/directory" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive
+
+# Sync and delete files in destination that don't exist in source
+azcopy sync "/local/path/to/directory" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --delete-destination=true
 ```
 
 ## Best Practices for Data Management
@@ -363,8 +438,8 @@ outputs:
 code: ./src
 environment: azureml:data-validation-env:1
 command: >-
-  python validate_data.py 
-  --input-data ${{inputs.input_data}} 
+  python validate_data.py
+  --input-data ${{inputs.input_data}}
   --validation-report ${{outputs.validation_report}}
 EOF
 
@@ -378,11 +453,11 @@ jobs:
     type: command
     component: azureml:data_validation:1
     inputs:
-      input_data: 
+      input_data:
         path: azureml://datastores/<datastore-name>/paths/<container-path>/
         mode: ro_mount
     outputs:
-      validation_report: 
+      validation_report:
         mode: rw_mount
 compute: azureml:<compute-name>
 EOF

@@ -314,6 +314,126 @@ az ml datastore create --name model-outputs --type azure_blob \
                        --workspace-name <workspace-name> --resource-group <resource-group>
 ```
 
+## AzCopy for High-Performance Data Transfer
+
+AzCopy is a command-line utility that provides optimized data transfer to and from Azure Storage.
+
+### Installation and Setup
+
+```bash
+# Download AzCopy (Linux)
+wget https://aka.ms/downloadazcopy-v10-linux
+tar -xvf downloadazcopy-v10-linux
+sudo cp ./azcopy_linux_amd64_*/azcopy /usr/bin/
+
+# Download AzCopy (macOS)
+brew install azcopy
+
+# Check AzCopy version
+azcopy --version
+
+# Login with Microsoft Entra ID (formerly Azure AD)
+azcopy login
+
+# Login with specific tenant
+azcopy login --tenant-id=<tenant-id>
+```
+
+### Batch Upload Operations
+
+```bash
+# Upload a single file
+azcopy copy "<local-file-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>/<blob-name>"
+
+# Upload a directory and all subdirectories
+azcopy copy "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive
+
+# Upload only the contents of a directory (not the directory itself)
+azcopy copy "<local-directory-path>/*" "https://<storage-account-name>.blob.core.windows.net/<container-name>/<directory-path>"
+
+# Upload with pattern matching
+azcopy copy "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --include-pattern "*.csv;*.parquet"
+
+# Upload with exclusion pattern
+azcopy copy "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --exclude-pattern "*.tmp;*.bak"
+
+# Upload with SAS token
+azcopy copy "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>?<sas-token>" --recursive
+
+# Upload files modified after a specific date/time
+azcopy copy "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --include-after "2023-04-15T15:04:00Z"
+```
+
+### Batch Download Operations
+
+```bash
+# Download a single blob
+azcopy copy "https://<storage-account-name>.blob.core.windows.net/<container-name>/<blob-name>" "<local-file-path>"
+
+# Download an entire container
+azcopy copy "https://<storage-account-name>.blob.core.windows.net/<container-name>" "<local-directory-path>" --recursive
+
+# Download with pattern matching
+azcopy copy "https://<storage-account-name>.blob.core.windows.net/<container-name>" "<local-directory-path>" --recursive --include-pattern "*.csv;*.parquet"
+```
+
+### Synchronization Operations
+
+```bash
+# Sync local directory to blob container (upload only new or modified files)
+azcopy sync "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive
+
+# Sync blob container to local directory (download only new or modified files)
+azcopy sync "https://<storage-account-name>.blob.core.windows.net/<container-name>" "<local-directory-path>" --recursive
+
+# Sync and delete files in destination that don't exist in source
+azcopy sync "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --delete-destination=true
+```
+
+### Copy Between Storage Accounts
+
+```bash
+# Copy blobs between storage accounts
+azcopy copy "https://<source-storage-account>.blob.core.windows.net/<source-container>?<sas-token>" "https://<destination-storage-account>.blob.core.windows.net/<destination-container>?<sas-token>" --recursive
+
+# Copy specific blobs between storage accounts
+azcopy copy "https://<source-storage-account>.blob.core.windows.net/<source-container>?<sas-token>" "https://<destination-storage-account>.blob.core.windows.net/<destination-container>?<sas-token>" --recursive --include-pattern "*.csv"
+```
+
+### Performance Optimization
+
+```bash
+# Increase concurrency for faster transfers (default is 32 * CPU cores)
+export AZCOPY_CONCURRENCY_VALUE=256  # Linux/macOS
+set AZCOPY_CONCURRENCY_VALUE=256     # Windows
+
+# Limit bandwidth usage (in Megabits per second)
+azcopy copy "<local-directory-path>" "https://<storage-account-name>.blob.core.windows.net/<container-name>" --recursive --cap-mbps 100
+
+# Run a benchmark test to optimize performance
+azcopy benchmark "https://<storage-account-name>.blob.core.windows.net/<container-name>"
+
+# Set buffer size for memory usage control (in GB)
+export AZCOPY_BUFFER_GB=4  # Linux/macOS
+set AZCOPY_BUFFER_GB=4     # Windows
+```
+
+### Job Management
+
+```bash
+# List ongoing and completed jobs
+azcopy jobs list
+
+# Show job details
+azcopy jobs show <job-id>
+
+# Resume a failed job
+azcopy jobs resume <job-id>
+
+# Cancel a job
+azcopy jobs cancel <job-id>
+```
+
 ## Troubleshooting Storage Issues
 
 ```bash
