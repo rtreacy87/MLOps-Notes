@@ -5,7 +5,8 @@ This guide covers how to set up an Azure DevOps board for project management usi
 ## Prerequisites
 
 - [WSL with Ubuntu installed](02-wsl-setup.md)
-- [Password management set up](04-password-management.md)
+- [Python environment setup](04-python-environment-setup.md)
+- [Password management set up](05-password-management.md)
 - Microsoft account or Azure AD account
 
 ## Installing Azure CLI
@@ -103,7 +104,7 @@ else
     # Create the project
     echo "Creating project '$PROJECT_NAME'..."
     az devops project create --name "$PROJECT_NAME" --description "MLOps project created with automation script" --visibility private
-    
+
     if [ $? -ne 0 ]; then
         echo "Failed to create project. Exiting."
         exit 1
@@ -160,7 +161,7 @@ for i in {1..3}; do
     SPRINT_NAME="Sprint $i"
     START_DATE=$(date -d "+$((i-1)) weeks" +%Y-%m-%d)
     END_DATE=$(date -d "+$i weeks" +%Y-%m-%d)
-    
+
     echo "Creating iteration: $SPRINT_NAME ($START_DATE to $END_DATE)"
     az boards iteration project create --name "$SPRINT_NAME" --path "$ITERATION_PATH" --start-date "$START_DATE" --finish-date "$END_DATE"
 done
@@ -285,4 +286,4 @@ az boards dashboard create --name "MLOps Overview" --description "Overview of ML
 
 ## Next Steps
 
-After setting up an Azure DevOps board, proceed to [setting up an Azure account](06-azure-account-setup.md) for cloud resources.
+After setting up an Azure DevOps board, proceed to [setting up an Azure account](07-azure-account-setup.md) for cloud resources.

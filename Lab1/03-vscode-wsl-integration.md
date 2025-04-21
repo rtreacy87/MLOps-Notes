@@ -259,4 +259,4 @@ To verify that VS Code is properly integrated with WSL:
 
 ## Next Steps
 
-After configuring VS Code to use WSL, proceed to [setting up password management](04-password-management.md) for secure storage of API keys and credentials.
+After configuring VS Code to use WSL, proceed to [setting up Python and virtual environments](04-python-environment-setup.md) for your ML development work.

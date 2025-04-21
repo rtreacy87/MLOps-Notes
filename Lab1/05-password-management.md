@@ -5,6 +5,7 @@ This guide covers how to set up `pass`, the standard Unix password manager, for 
 ## Prerequisites
 
 - [WSL with Ubuntu installed](02-wsl-setup.md)
+- [Python environment setup](04-python-environment-setup.md)
 - Basic familiarity with command line operations
 
 ## What is Pass?
@@ -85,7 +86,7 @@ fi
 # Check if GPG key exists
 if ! gpg --list-secret-keys | grep -q "sec"; then
     echo "No GPG key found. Generating a new GPG key..."
-    
+
     # Generate a GPG key non-interactively
     cat > /tmp/gpg-gen-key << EOF
 %echo Generating a GPG key
@@ -103,7 +104,7 @@ EOF
 
     gpg --batch --generate-key /tmp/gpg-gen-key
     rm /tmp/gpg-gen-key
-    
+
     echo "GPG key generated."
     echo "IMPORTANT: Save the passphrase shown above in a secure location!"
 else
@@ -272,4 +273,4 @@ git clone git@github.com:yourusername/password-store.git ~/.password-store
 
 ## Next Steps
 
-After setting up password management, proceed to [setting up an Azure DevOps board](05-devops-board-setup.md) for project management.
+After setting up password management, proceed to [setting up an Azure DevOps board](06-devops-board-setup.md) for project management.

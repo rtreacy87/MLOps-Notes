@@ -4,8 +4,8 @@ This guide covers how to set up Azure resources for ML development using infrast
 
 ## Prerequisites
 
-- [Azure account set up](06-azure-account-setup.md)
-- [DevOps-Azure integration configured](07-devops-azure-integration.md)
+- [Azure account set up](07-azure-account-setup.md)
+- [DevOps-Azure integration configured](08-devops-azure-integration.md)
 - Azure CLI installed and configured
 
 ## Infrastructure as Code Options
@@ -950,4 +950,4 @@ This combination provides:
 
 ## Next Steps
 
-After setting up your Azure resources, proceed to [learning how to tear down your environment](09-teardown-guide.md) when you no longer need it.
+After setting up your Azure resources, proceed to [learning how to tear down your environment](10-teardown-guide.md) when you no longer need it.

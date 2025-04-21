@@ -4,8 +4,8 @@ This guide covers how to integrate your Azure DevOps board with your Azure accou
 
 ## Prerequisites
 
-- [Azure DevOps board set up](05-devops-board-setup.md)
-- [Azure account set up](06-azure-account-setup.md)
+- [Azure DevOps board set up](06-devops-board-setup.md)
+- [Azure account set up](07-azure-account-setup.md)
 - Azure CLI and Azure DevOps CLI extension installed
 
 ## Understanding the Integration
@@ -249,7 +249,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           az group create --name $(resourceGroupName) --location $(location)
-          
+
     - task: AzureCLI@2
       displayName: 'Deploy Storage Account'
       inputs:
@@ -326,7 +326,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           az group create --name $(resourceGroupName) --location $(location)
-          
+
     - task: AzureCLI@2
       displayName: 'Deploy Storage Account'
       inputs:
@@ -491,4 +491,4 @@ chmod +x setup-azure-dashboard.sh
 
 ## Next Steps
 
-After linking your DevOps board to your Azure account, proceed to [setting up Azure resources](08-azure-resource-setup.md) for your ML development environment.
+After linking your DevOps board to your Azure account, proceed to [setting up Azure resources](09-azure-resource-setup.md) for your ML development environment.

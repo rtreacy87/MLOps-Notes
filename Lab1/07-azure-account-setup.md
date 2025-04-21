@@ -5,7 +5,8 @@ This guide covers how to set up an Azure account and configure it for MLOps usin
 ## Prerequisites
 
 - [WSL with Ubuntu installed](02-wsl-setup.md)
-- [Azure CLI installed](05-devops-board-setup.md#installing-azure-cli)
+- [Python environment setup](04-python-environment-setup.md)
+- [Azure CLI installed](06-devops-board-setup.md#installing-azure-cli)
 - Microsoft account (personal) or work/school account
 
 ## Creating an Azure Account
@@ -86,7 +87,7 @@ if command -v pass &> /dev/null; then
     echo "$PASSWORD" | pass insert -e "azure/service-principal/password"
     echo "$TENANT" | pass insert -e "azure/service-principal/tenant"
     echo "$SUBSCRIPTION_ID" | pass insert -e "azure/service-principal/subscription-id"
-    
+
     # Remove the JSON file after storing in pass
     rm sp-credentials.json
     echo "Credentials stored in password manager. JSON file removed."
@@ -341,4 +342,4 @@ chmod +x setup-azure-environment.sh
 
 ## Next Steps
 
-After setting up your Azure account, proceed to [linking your DevOps board to your Azure account](07-devops-azure-integration.md).
+After setting up your Azure account, proceed to [linking your DevOps board to your Azure account](08-devops-azure-integration.md).

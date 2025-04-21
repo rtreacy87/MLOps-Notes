@@ -7,12 +7,13 @@ This lab provides step-by-step instructions for setting up a complete MLOps deve
 1. [VS Code Installation](01-vscode-installation.md) - Installing VS Code on Windows using automation
 2. [WSL Setup](02-wsl-setup.md) - Setting up Windows Subsystem for Linux with Ubuntu using scripts
 3. [VS Code WSL Integration](03-vscode-wsl-integration.md) - Configuring VS Code to use WSL as the default terminal
-4. [Password Management](04-password-management.md) - Setting up pass for password management and API key storage
-5. [DevOps Board Setup](05-devops-board-setup.md) - Creating and configuring an Azure DevOps board using Azure CLI
-6. [Azure Account Setup](06-azure-account-setup.md) - Setting up an Azure account with automation
-7. [DevOps-Azure Integration](07-devops-azure-integration.md) - Linking DevOps board to Azure account using scripts
-8. [Azure Resource Setup](08-azure-resource-setup.md) - Setting up resource groups and storage using IaC templates
-9. [Teardown Guide](09-teardown-guide.md) - How to tear down all resources and clean up the environment
+4. [Python Environment Setup](04-python-environment-setup.md) - Installing Python and setting up virtual environments (venv and Conda)
+5. [Password Management](05-password-management.md) - Setting up pass for password management and API key storage
+6. [DevOps Board Setup](06-devops-board-setup.md) - Creating and configuring an Azure DevOps board using Azure CLI
+7. [Azure Account Setup](07-azure-account-setup.md) - Setting up an Azure account with automation
+8. [DevOps-Azure Integration](08-devops-azure-integration.md) - Linking DevOps board to Azure account using scripts
+9. [Azure Resource Setup](09-azure-resource-setup.md) - Setting up resource groups and storage using IaC templates
+10. [Teardown Guide](10-teardown-guide.md) - How to tear down all resources and clean up the environment
 
 ## Infrastructure as Code Approach
 
