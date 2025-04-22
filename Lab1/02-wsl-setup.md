@@ -241,6 +241,25 @@ wsl --set-default Ubuntu
 
 After setting the default, you can simply use `wsl` without specifying a distribution to launch Ubuntu.
 
+## Appendix: Common Issues and Solutions
+
+### Git Authentication Issues with GitHub
+
+Many users encounter authentication problems when trying to push to GitHub repositories from WSL. This typically manifests as "Invalid username or password" errors, even when using correct credentials. This happens because:
+
+1. GitHub no longer supports password authentication for Git operations
+2. WSL and Windows have separate credential stores
+3. Default Git configurations in WSL may not be properly set up for GitHub's authentication requirements
+
+To resolve these issues, you have several options:
+
+- Use SSH keys (recommended for most users)
+- Configure Personal Access Tokens (PAT)
+- Set up GitHub CLI
+- Use Windows Credential Manager from WSL
+
+For detailed instructions on solving GitHub authentication issues in WSL, refer to the [WSL Git Setup Wiki](wsl-git-setup-wiki.md).
+
 ## Next Steps
 
 After setting up WSL with Ubuntu, proceed to [configuring VS Code to use WSL](03-vscode-wsl-integration.md).

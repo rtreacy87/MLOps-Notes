@@ -1,0 +1,204 @@
+# Configuring Git Authentication in WSL
+
+This guide will help you set up proper Git authentication in Windows Subsystem for Linux (WSL) to successfully push to GitHub repositories.
+
+## Understanding the Issue
+
+The error message "Invalid username or password" occurs because GitHub no longer supports password authentication for Git operations. You need to use either:
+- Personal Access Tokens (PAT)
+- SSH keys
+- Credential Manager
+
+## Method 1: Using Personal Access Token (PAT)
+
+### Step 1: Generate a GitHub Personal Access Token
+
+1. Go to GitHub.com and log in
+2. Click your profile picture → Settings → Developer settings
+3. Select "Personal access tokens" → "Tokens (classic)"
+4. Click "Generate new token" → "Generate new token (classic)"
+5. Give your token a descriptive name (e.g., "WSL Git Access")
+6. Set expiration (recommended: 90 days)
+7. Select scopes (required: `repo` for full repository access)
+8. Click "Generate token"
+9. Copy the token immediately (you won't see it again!)
+
+### Step 2: Configure Git Credential Storage
+
+```bash
+# Configure credential helper to cache your credentials
+git config --global credential.helper store
+
+# Or use credential manager
+git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
+```
+
+### Step 3: Use the Token
+
+Next time you push, use:
+- Username: Your GitHub username
+- Password: Your Personal Access Token (not your GitHub password)
+
+## Method 2: Using SSH Keys (Recommended)
+
+### Step 1: Generate SSH Key
+
+```bash
+# Generate a new SSH key
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# Press Enter to accept default file location
+# Enter a passphrase (optional but recommended)
+```
+
+### Step 2: Add SSH Key to SSH Agent
+
+```bash
+# Start the ssh-agent
+eval "$(ssh-agent -s)"
+
+# Add your SSH private key
+ssh-add ~/.ssh/id_ed25519
+```
+
+### Step 3: Add SSH Key to GitHub
+
+1. Copy your public key:
+   ```bash
+   cat ~/.ssh/id_ed25519.pub
+   ```
+   You'll see output like this:
+   ```
+   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... myemail@email.com
+   ```
+   **Important**: Copy the ENTIRE output, including:
+   - The key type (`ssh-ed25519`)
+   - The key itself (the long string starting with `AAAAC3...`)
+   - Your email address at the end
+
+2. Go to GitHub.com → Settings → SSH and GPG keys
+3. Click "New SSH key"
+4. Paste the entire key (all of it from step 1) and save
+
+### Step 4: Update Remote URL
+
+```bash
+# Change from HTTPS to SSH
+git remote set-url origin git@github.com:username/repository.git
+
+# Verify the change
+git remote -v
+```
+
+## Method 3: Using GitHub CLI
+
+### Step 1: Install GitHub CLI
+
+```bash
+# For Ubuntu/Debian
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update
+sudo apt install gh
+```
+
+### Step 2: Authenticate with GitHub CLI
+
+```bash
+gh auth login
+
+# Follow the prompts to authenticate
+```
+
+## Method 4: Using Windows Credential Manager
+
+If you have Git installed on Windows, you can use the Windows Credential Manager:
+
+```bash
+git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
+```
+
+This allows your WSL Git to use the same credentials as your Windows Git installation.
+
+## Troubleshooting
+
+### Clear Cached Credentials
+
+```bash
+# Clear any cached credentials
+git credential-cache exit
+git credential reject https://github.com
+```
+
+### Check Configuration
+
+```bash
+# Check your Git configuration
+git config --list
+
+# Verify remote URL
+git remote -v
+```
+
+### Test Connection
+
+```bash
+# For SSH
+ssh -T git@github.com
+
+# For HTTPS
+git ls-remote https://github.com/username/repository
+```
+
+## Best Practices
+
+1. **Use SSH for persistence**: SSH keys provide more secure and convenient authentication
+2. **Set token expiration**: Always set expiration dates for PATs
+3. **Use minimal permissions**: Only grant necessary scopes to tokens
+4. **Regularly rotate credentials**: Update tokens and keys periodically
+5. **Never commit credentials**: Never store tokens or keys in your repositories
+
+## Common Issues and Solutions
+
+### Issue: WSL can't find SSH key
+```bash
+# Ensure correct permissions
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+```
+
+### Issue: Credential helper timeout
+```bash
+# Set a longer timeout (in seconds)
+git config --global credential.helper 'cache --timeout=3600'
+```
+
+### Issue: Multiple GitHub accounts
+```bash
+# Use different SSH keys for different accounts
+# Create ~/.ssh/config
+Host github.com-personal
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_personal
+
+Host github.com-work
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_work
+
+# Update remote URL
+git remote set-url origin git@github.com-personal:username/repository.git
+```
+
+## Summary
+
+For the best experience with Git in WSL:
+
+1. Use SSH keys for authentication
+2. Configure Git with your name and email
+3. Set up credential caching if using HTTPS
+4. Keep your credentials secure and updated
+
+With these configurations, you should be able to push to GitHub repositories from WSL without authentication issues.
