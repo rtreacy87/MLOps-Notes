@@ -26,6 +26,19 @@ Run this command in PowerShell:
 code --install-extension ms-vscode-remote.remote-wsl
 ```
 
+## ⚠️ Warning: Docker Desktop for Windows Issues
+
+> **IMPORTANT**: Docker Desktop for Windows can cause significant issues when used with WSL integration. These issues include performance problems, file system conflicts, and resource contention.
+>
+> **Recommended approach**:
+> - Ensure you are running the base WSL installation without modifications
+> - Remove any Windows Docker instances
+> - Uninstall Docker Desktop for Windows completely
+> - Instead, install Docker directly in your WSL distribution, as it uses the Linux kernel anyway
+> - This approach provides better performance, stability, and a more native Linux development experience
+>
+> For instructions on installing Docker directly in WSL, refer to the Docker documentation for Linux installation.
+
 ## Setting WSL as the Default Terminal
 
 ### Option 1: Using VS Code Settings UI

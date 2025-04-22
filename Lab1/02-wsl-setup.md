@@ -133,16 +133,113 @@ To use this script:
 5. Make it executable: `chmod +x setup-ubuntu-env.sh`
 6. Run it: `./setup-ubuntu-env.sh`
 
-## Verifying WSL Installation
+## Managing WSL from the Command Line
 
-To verify that WSL is installed correctly and Ubuntu is running:
+### Verifying WSL Installation
+
+To verify that WSL is installed correctly and see all installed distributions:
 
 ```powershell
-# Run in PowerShell
+# Run in PowerShell or Command Prompt
 wsl --list --verbose
 ```
 
 This should show Ubuntu running on WSL version 2.
+
+### Activating Ubuntu WSL
+
+To start and activate Ubuntu WSL from PowerShell or Command Prompt:
+
+```powershell
+# Run in PowerShell or Command Prompt
+wsl.exe -d Ubuntu
+```
+
+This command launches Ubuntu and switches your terminal to the Ubuntu environment. You'll see the prompt change to indicate you're now in Linux.
+
+### Running Commands in WSL Without Switching Environment
+
+To run a single command in WSL without switching your terminal environment:
+
+```powershell
+# Run in PowerShell or Command Prompt
+wsl [command]
+
+# Example: List files in your Ubuntu home directory
+wsl ls -la ~
+```
+
+### Shutting Down WSL
+
+#### From Windows (PowerShell or Command Prompt)
+
+To shut down a specific WSL distribution:
+
+```powershell
+# Run in PowerShell or Command Prompt
+wsl --terminate Ubuntu
+```
+
+To shut down all running WSL distributions:
+
+```powershell
+# Run in PowerShell or Command Prompt
+wsl --shutdown
+```
+
+#### From Within WSL
+
+To exit a WSL session and return to Windows command prompt:
+
+```bash
+# Simply type exit or press Ctrl+D
+exit
+```
+
+To logout of the current user session in WSL:
+
+```bash
+logout
+```
+
+To shutdown the WSL instance from within Ubuntu:
+
+```bash
+# This will shut down the entire WSL instance
+sudo shutdown now
+```
+
+> **Note**: Using `exit` or `logout` only closes your current terminal session but leaves the WSL distribution running in the background. To completely shut down WSL and free up resources, use the PowerShell commands above or the `shutdown` command from within WSL.
+
+#### When to Keep WSL Running vs. When to Shut Down
+
+**Reasons to keep WSL running in the background:**
+
+- **Faster startup**: When you need to frequently switch between Windows and WSL, keeping WSL running allows for instant access without waiting for it to initialize
+- **Background services**: If you're running services like web servers, databases, or development environments that need to remain accessible
+- **Long-running processes**: For tasks like training ML models, data processing, or simulations that need to continue even when you're not actively using the terminal
+- **Development workflow**: During active development sessions where you'll be returning to WSL frequently
+- **Resource usage is minimal**: When idle, WSL typically uses very little memory and CPU
+
+**Reasons to shut down WSL completely:**
+
+- **Conserve resources**: On systems with limited RAM or when you need maximum performance for other applications
+- **Battery life**: When working on a laptop and trying to maximize battery life
+- **System stability**: If you're experiencing any WSL-related issues or conflicts with other virtualization software
+- **Security**: When working with sensitive data and want to ensure the environment is completely closed
+- **System maintenance**: Before system updates, restarts, or when you won't be using WSL for an extended period
+- **Troubleshooting**: When you need to reset the WSL environment to resolve issues
+
+### Setting Default WSL Distribution
+
+If you have multiple WSL distributions installed, you can set Ubuntu as the default:
+
+```powershell
+# Run in PowerShell or Command Prompt
+wsl --set-default Ubuntu
+```
+
+After setting the default, you can simply use `wsl` without specifying a distribution to launch Ubuntu.
 
 ## Next Steps
 
