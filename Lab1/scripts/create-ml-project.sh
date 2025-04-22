@@ -1,10 +1,17 @@
 #!/bin/bash
-# Script to create a new ML project with VS Code integration
+# Script to create a new ML project with VS Code integration using Conda
 
 # Check if project name is provided
 if [ $# -eq 0 ]; then
     echo "Please provide a project name"
     echo "Usage: ./create-ml-project.sh project_name"
+    exit 1
+fi
+
+# Check if conda is installed
+if ! command -v conda &> /dev/null; then
+    echo "Conda is not installed. Please install Miniconda or Anaconda first."
+    echo "You can run: ./install-conda.sh"
     exit 1
 fi
 
@@ -22,7 +29,7 @@ mkdir -p data src/models src/pipelines config notebooks tests
 cat > README.md << EOF
 # $PROJECT_NAME
 
-ML project created with automated setup script.
+ML project created with automated setup script using Conda.
 
 ## Project Structure
 
@@ -32,26 +39,44 @@ ML project created with automated setup script.
 - \`config/\`: Configuration files
 - \`notebooks/\`: Jupyter notebooks
 - \`tests/\`: Unit and integration tests
+
+## Setup
+
+1. Activate the Conda environment:
+   \`\`\`
+   conda activate $PROJECT_NAME
+   \`\`\`
+
+2. Update the environment if needed:
+   \`\`\`
+   conda env update -f environment.yml
+   \`\`\`
 EOF
 
-# Create a Python virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install basic packages
-pip install numpy pandas scikit-learn matplotlib jupyter
-
-# Create a requirements.txt file
-cat > requirements.txt << EOF
-numpy
-pandas
-scikit-learn
-matplotlib
-jupyter
-pytest
-black
-flake8
+# Create a Conda environment file
+cat > environment.yml << EOF
+name: $PROJECT_NAME
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - jupyter
+  - ipykernel
+  - pytest
+  - pip
+  - pip:
+    - black
+    - flake8
 EOF
+
+# Create the Conda environment
+echo "Creating Conda environment '$PROJECT_NAME'..."
+conda env create -f environment.yml
 
 # Create a .gitignore file
 cat > .gitignore << EOF
@@ -77,10 +102,10 @@ var/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-.venv/
-venv/
-ENV/
+# Conda Environment
+.conda/
+miniconda/
+anaconda/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -106,7 +131,7 @@ git init
 mkdir -p .vscode
 cat > .vscode/settings.json << EOF
 {
-    "python.defaultInterpreterPath": "${PROJECT_DIR}/.venv/bin/python",
+    "python.defaultInterpreterPath": "~/miniconda/envs/$PROJECT_NAME/bin/python",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": true,
     "python.formatting.provider": "black",
@@ -120,5 +145,11 @@ cat > .vscode/settings.json << EOF
 }
 EOF
 
+# Register the kernel for Jupyter
+echo "Registering Jupyter kernel..."
+conda activate $PROJECT_NAME
+python -m ipykernel install --user --name=$PROJECT_NAME --display-name="Python ($PROJECT_NAME)"
+
 echo "Project $PROJECT_NAME has been created at $PROJECT_DIR"
+echo "To activate the Conda environment, run: conda activate $PROJECT_NAME"
 echo "To open it in VS Code, run: code $PROJECT_DIR"

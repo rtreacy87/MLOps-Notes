@@ -111,9 +111,9 @@ Save this script as `configure-vscode-wsl.ps1` and run it with PowerShell.
 2. Under "WSL Targets", find your Ubuntu distribution
 3. Click on the folder icon next to it to open a folder in WSL
 
-## Creating a Script to Set Up a New Project
+## Creating a Script to Set Up a New Project with Conda
 
-Create a bash script in your WSL environment to set up a new ML project with VS Code:
+Create a bash script in your WSL environment to set up a new ML project with VS Code and Conda:
 
 ```bash
 #!/bin/bash
@@ -123,6 +123,13 @@ Create a bash script in your WSL environment to set up a new ML project with VS 
 if [ $# -eq 0 ]; then
     echo "Please provide a project name"
     echo "Usage: ./create-ml-project.sh project_name"
+    exit 1
+fi
+
+# Check if conda is installed
+if ! command -v conda &> /dev/null; then
+    echo "Conda is not installed. Please install Miniconda or Anaconda first."
+    echo "You can run: ./install-conda.sh"
     exit 1
 fi
 
@@ -140,7 +147,7 @@ mkdir -p data src/models src/pipelines config notebooks tests
 cat > README.md << EOF
 # $PROJECT_NAME
 
-ML project created with automated setup script.
+ML project created with automated setup script using Conda.
 
 ## Project Structure
 
@@ -150,26 +157,44 @@ ML project created with automated setup script.
 - \`config/\`: Configuration files
 - \`notebooks/\`: Jupyter notebooks
 - \`tests/\`: Unit and integration tests
+
+## Setup
+
+1. Activate the Conda environment:
+   \`\`\`
+   conda activate $PROJECT_NAME
+   \`\`\`
+
+2. Update the environment if needed:
+   \`\`\`
+   conda env update -f environment.yml
+   \`\`\`
 EOF
 
-# Create a Python virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install basic packages
-pip install numpy pandas scikit-learn matplotlib jupyter
-
-# Create a requirements.txt file
-cat > requirements.txt << EOF
-numpy
-pandas
-scikit-learn
-matplotlib
-jupyter
-pytest
-black
-flake8
+# Create a Conda environment file
+cat > environment.yml << EOF
+name: $PROJECT_NAME
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - jupyter
+  - ipykernel
+  - pytest
+  - pip
+  - pip:
+    - black
+    - flake8
 EOF
+
+# Create the Conda environment
+echo "Creating Conda environment '$PROJECT_NAME'..."
+conda env create -f environment.yml
 
 # Create a .gitignore file
 cat > .gitignore << EOF
@@ -195,10 +220,10 @@ var/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-.venv/
-venv/
-ENV/
+# Conda Environment
+.conda/
+miniconda/
+anaconda/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -224,7 +249,7 @@ git init
 mkdir -p .vscode
 cat > .vscode/settings.json << EOF
 {
-    "python.defaultInterpreterPath": "${PROJECT_DIR}/.venv/bin/python",
+    "python.defaultInterpreterPath": "~/miniconda/envs/$PROJECT_NAME/bin/python",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": true,
     "python.formatting.provider": "black",
@@ -238,15 +263,23 @@ cat > .vscode/settings.json << EOF
 }
 EOF
 
+# Register the kernel for Jupyter
+echo "Registering Jupyter kernel..."
+conda activate $PROJECT_NAME
+python -m ipykernel install --user --name=$PROJECT_NAME --display-name="Python ($PROJECT_NAME)"
+
 echo "Project $PROJECT_NAME has been created at $PROJECT_DIR"
+echo "To activate the Conda environment, run: conda activate $PROJECT_NAME"
 echo "To open it in VS Code, run: code $PROJECT_DIR"
 ```
 
 To use this script:
-1. Save it as `create-ml-project.sh` in your WSL home directory
-2. Make it executable: `chmod +x create-ml-project.sh`
-3. Run it with a project name: `./create-ml-project.sh my-ml-project`
-4. Open the project in VS Code: `code ~/projects/my-ml-project`
+1. Make sure Conda is installed (see [Python Environment Setup](04-python-environment-setup.md))
+2. Save the script as `create-ml-project.sh` in your WSL home directory
+3. Make it executable: `chmod +x create-ml-project.sh`
+4. Run it with a project name: `./create-ml-project.sh my-ml-project`
+5. Activate the Conda environment: `conda activate my-ml-project`
+6. Open the project in VS Code: `code ~/projects/my-ml-project`
 
 ## Verifying the Integration
 
