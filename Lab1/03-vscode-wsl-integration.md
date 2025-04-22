@@ -274,12 +274,16 @@ echo "To open it in VS Code, run: code $PROJECT_DIR"
 ```
 
 To use this script:
-1. Make sure Conda is installed (see [Python Environment Setup](04-python-environment-setup.md))
-2. Save the script as `create-ml-project.sh` in your WSL home directory
-3. Make it executable: `chmod +x create-ml-project.sh`
-4. Run it with a project name: `./create-ml-project.sh my-ml-project`
-5. Activate the Conda environment: `conda activate my-ml-project`
-6. Open the project in VS Code: `code ~/projects/my-ml-project`
+1. First, activate your Ubuntu WSL distribution from PowerShell or Command Prompt:
+   ```
+   wsl.exe -d Ubuntu
+   ```
+2. Make sure Conda is installed (see [Python Environment Setup](04-python-environment-setup.md))
+3. Save the script as `create-ml-project.sh` in your WSL home directory
+4. Make it executable: `chmod +x create-ml-project.sh`
+5. Run it with a project name: `./create-ml-project.sh my-ml-project`
+6. Activate the Conda environment: `conda activate my-ml-project`
+7. Open the project in VS Code: `code ~/projects/my-ml-project`
 
 ## Verifying the Integration
 

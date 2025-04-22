@@ -139,7 +139,7 @@ To verify that WSL is installed correctly and Ubuntu is running:
 
 ```powershell
 # Run in PowerShell
-wsl -l -v
+wsl --list --verbose
 ```
 
 This should show Ubuntu running on WSL version 2.

@@ -1,5 +1,8 @@
 #!/bin/bash
 # Script to create a new ML project with VS Code integration using Conda
+#
+# NOTE: This script must be run from within your Ubuntu WSL environment.
+# If you're in Windows, first activate Ubuntu with: wsl.exe -d Ubuntu
 
 # Check if project name is provided
 if [ $# -eq 0 ]; then
