@@ -94,7 +94,7 @@ sudo apt install -y python3 python3-pip python3-venv
 
 # Install Node.js and npm
 echo "Installing Node.js and npm..."
-curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Install Azure CLI
@@ -242,6 +242,55 @@ wsl --set-default Ubuntu
 After setting the default, you can simply use `wsl` without specifying a distribution to launch Ubuntu.
 
 ## Appendix: Common Issues and Solutions
+
+### Upgrading Node.js from Version 16 to 22
+
+If you have an existing WSL installation with Node.js 16 (which is now deprecated), you should upgrade to Node.js 22 LTS. Here's how to safely upgrade:
+
+#### Option 1: Using the NodeSource Repository (Recommended)
+
+```bash
+# Remove old Node.js repository source
+sudo rm -f /etc/apt/sources.list.d/nodesource.list
+sudo rm -f /etc/apt/sources.list.d/nodesource.list.save
+
+# Remove existing Node.js installation
+sudo apt purge -y nodejs
+sudo apt autoremove -y
+
+# Install the latest LTS version (Node.js 22.x)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify the installation
+node --version  # Should show v22.x.x
+npm --version   # Should show the corresponding npm version
+```
+
+#### Option 2: Using Node Version Manager (nvm)
+
+If you prefer to manage multiple Node.js versions, you can use nvm:
+
+```bash
+# Install nvm if not already installed
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Reload shell configuration
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Install Node.js 22 LTS
+nvm install --lts
+
+# Set it as default
+nvm alias default node
+
+# Verify the installation
+node --version  # Should show v22.x.x
+npm --version   # Should show the corresponding npm version
+```
+
+With nvm, you can easily switch between Node.js versions using `nvm use <version>` if needed for specific projects.
 
 ### Git Authentication Issues with GitHub
 
