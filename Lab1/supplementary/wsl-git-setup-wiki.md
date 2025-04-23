@@ -130,6 +130,14 @@ git remote -v
 
 If you're repeatedly prompted for your SSH key password in WSL, try these solutions:
 
+**Quick solution guide:**
+
+- **For a quick fix**: Try solution #5 (Verify SSH Agent Has Your Key)
+- **For a permanent fix**: Set up solution #1 (Automatic SSH Agent) or #3 (Keychain)
+- **For the most robust solution**: Implement both #1 and #2 (SSH Config)
+
+Each solution below includes a simple explanation of what the code does and why it helps:
+
 #### 1. Ensure SSH Agent is Running Automatically
 
 Add these lines to your `~/.bashrc` or `~/.zshrc` file to start the SSH agent automatically:
@@ -153,6 +161,19 @@ if [ -f "$HOME/.ssh/id_ed25519" ]; then
 fi
 ```
 
+**Simple explanation of what this script does:**
+
+1. **First part (SSH agent check):**
+   - Checks if the SSH agent is already running
+   - If it's not running, starts it automatically
+   - The SSH agent is a program that holds your private keys in memory so you don't have to type your password each time
+
+2. **Second part (Adding your key):**
+   - Checks if your SSH key file exists
+   - Checks if your key is already loaded in the agent
+   - If the key isn't loaded, adds it to the agent
+   - This means your key is available for authentication without requiring your password repeatedly
+
 After adding these lines, restart your terminal or run `source ~/.bashrc` (or `source ~/.zshrc`).
 
 #### 2. Use SSH Config to Persist Connections
@@ -170,6 +191,18 @@ Host github.com
     ControlPath ~/.ssh/control/%r@%h:%p
     ControlPersist yes
 ```
+
+**Simple explanation of this configuration:**
+
+- `Host github.com`: This section applies to connections to GitHub
+- `IdentityFile`: Tells SSH which key file to use (so you don't have to specify it each time)
+- `AddKeysToAgent yes`: Automatically adds your key to the SSH agent when used
+- `IdentitiesOnly yes`: Only uses the specified key, avoiding key negotiation delays
+- `ControlMaster auto`: Creates a single shared connection that all other connections can use
+- `ControlPath`: Where to store the control socket file
+- `ControlPersist yes`: Keeps the connection open in the background even after you close your terminal
+
+The overall effect is that SSH will establish one connection and reuse it, avoiding password prompts for each new connection.
 
 Make sure to create the control directory:
 
@@ -192,6 +225,16 @@ if [ -f "/usr/bin/keychain" ]; then
 fi
 ```
 
+**Simple explanation:**
+
+- Keychain is a special tool that manages SSH keys across login sessions
+- The first command installs the keychain program
+- The second part adds code to your shell startup file that:
+  - Checks if keychain is installed
+  - If it is, starts keychain and tells it to manage your SSH key
+  - Keychain will remember your password and keep your key available even after reboots
+  - This means you'll only need to enter your password once after each system restart
+
 #### 4. Check SSH Key Permissions
 
 Incorrect permissions can cause authentication issues:
@@ -203,6 +246,15 @@ chmod 600 ~/.ssh/id_ed25519
 chmod 644 ~/.ssh/id_ed25519.pub
 ```
 
+**Simple explanation:**
+
+- SSH is very strict about file permissions for security reasons
+- These commands set the correct permissions that SSH requires:
+  - `chmod 700 ~/.ssh`: Only you can access your SSH directory
+  - `chmod 600 ~/.ssh/id_ed25519`: Only you can read/write your private key
+  - `chmod 644 ~/.ssh/id_ed25519.pub`: Everyone can read your public key, but only you can modify it
+- If permissions are wrong, SSH will refuse to use your keys as a security measure
+
 #### 5. Verify SSH Agent Has Your Key
 
 ```bash
@@ -213,6 +265,14 @@ ssh-add -l
 ssh-add ~/.ssh/id_ed25519
 ```
 
+**Simple explanation:**
+
+- The SSH agent needs to have your key loaded to use it
+- `ssh-add -l` shows all keys currently loaded in the agent
+- If you don't see your key listed, the second command adds it
+- When you add a key, you'll be asked for your password once
+- After that, the agent will use the key without asking for your password again
+
 #### 6. Test Your SSH Connection
 
 ```bash
@@ -220,7 +280,14 @@ ssh-add ~/.ssh/id_ed25519
 ssh -T git@github.com
 ```
 
-If successful, you should see a message like: "Hi username! You've successfully authenticated..."
+**Simple explanation:**
+
+- This command tests if your SSH key is working correctly with GitHub
+- It tries to establish a connection to GitHub using your SSH key
+- If everything is set up correctly, GitHub will recognize you
+- You'll see a message like: "Hi username! You've successfully authenticated..."
+- If you see this message, your SSH setup is working properly
+- If you're prompted for a password, one of the previous steps needs attention
 
 ## Method 3: Using GitHub CLI
 
