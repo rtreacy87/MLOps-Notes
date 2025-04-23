@@ -125,6 +125,7 @@ git remote set-url origin git@github.com:username/repository.git
 # Verify the change
 git remote -v
 ```
+For detailed instructions on solving common SSH problems, refer to the [SSH Agent Configuration Wiki](ssh-agent-configuration.md).
 
 ### Troubleshooting: Constantly Asked for SSH Key Password
 
