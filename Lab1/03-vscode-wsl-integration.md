@@ -43,11 +43,33 @@ code --install-extension ms-vscode-remote.remote-wsl
 
 ### Option 1: Using VS Code Settings UI
 
+#### For Linux:
+
+1. Open VS Code
+2. Press `Ctrl+,` to open Settings
+3. Search for "terminal.integrated.defaultProfile.linux"
+4. Click "Edit in settings.json"
+5. Add or modify these settings:
+
+```json
+{
+    "terminal.integrated.defaultProfile.linux": "bash"
+}
+```
+
+#### For Windows:
+
 1. Open VS Code
 2. Press `Ctrl+,` to open Settings
 3. Search for "terminal.integrated.defaultProfile.windows"
-4. Click "Edit in settings.json"
-5. Add or modify these settings:
+4. You'll see a dropdown menu where you can select your preferred terminal
+5. Select "Ubuntu (WSL)" from the dropdown
+
+Alternatively, to edit settings.json directly:
+
+1. Press `Ctrl+Shift+P` to open the Command Palette
+2. Type "Preferences: Open User Settings (JSON)" and select it
+3. Add or modify these settings:
 
 ```json
 {
