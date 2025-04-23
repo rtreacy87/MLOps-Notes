@@ -258,7 +258,7 @@ To resolve these issues, you have several options:
 - Set up GitHub CLI
 - Use Windows Credential Manager from WSL
 
-For detailed instructions on solving GitHub authentication issues in WSL, refer to the [WSL Git Setup Wiki](wsl-git-setup-wiki.md).
+For detailed instructions on solving GitHub authentication issues in WSL, refer to the [WSL Git Setup Wiki](supplementary/wsl-git-setup-wiki.md).
 
 ## Next Steps
 

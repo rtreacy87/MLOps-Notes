@@ -41,7 +41,11 @@ Next time you push, use:
 
 ## Method 2: Using SSH Keys (Recommended)
 
-### Step 1: Generate SSH Key
+### Step 1: Generate or Reuse SSH Keys
+
+#### Creating New SSH Keys vs. Reusing Existing Keys
+
+**Creating new SSH keys for each computer (Recommended):**
 
 ```bash
 # Generate a new SSH key
@@ -50,6 +54,38 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 # Press Enter to accept default file location
 # Enter a passphrase (optional but recommended)
 ```
+
+**Reusing existing SSH keys from a password manager:**
+
+```bash
+# Create the .ssh directory if it doesn't exist
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Create the private key file (id_ed25519) and public key file (id_ed25519.pub)
+# by pasting the content from your password manager
+
+# Set proper permissions
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+```
+
+**Comparing the two approaches:**
+
+| Aspect | Creating New Keys | Reusing Existing Keys |
+|--------|------------------|----------------------|
+| **Security** | More secure - each device has unique keys | Less secure - compromise of one device affects all |
+| **Traceability** | Better - can identify which device accessed repositories | Worse - can't distinguish between devices |
+| **Revocation** | Easier - can revoke access for a specific device | Harder - revoking affects all devices using the key |
+| **Convenience** | Less convenient - need to add each key to GitHub | More convenient - set up once, use everywhere |
+| **Backup needs** | Higher - need to back up keys from each device | Lower - only need to back up once |
+
+**Recommendation:** Create new SSH keys for each computer/environment for better security and control. This allows you to:
+- Revoke access for specific devices if lost or compromised
+- Track which device is being used for repository access
+- Maintain security isolation between different environments
+
+If you choose to reuse keys, ensure they are stored securely and use a strong passphrase.
 
 ### Step 2: Add SSH Key to SSH Agent
 
