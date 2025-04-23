@@ -48,6 +48,102 @@ if [ -f "$HOME/.ssh/id_rsa" ]; then
   ssh-add -l | grep -q "$(ssh-keygen -lf "$HOME/.ssh/id_rsa" | awk '{print $2}')" || ssh-add "$HOME/.ssh/id_rsa" 2>/dev/null
 fi
 ```
+## Detailed Explanation for Beginners
+
+Here's a line-by-line explanation of the recommended SSH agent configuration in simple terms:
+
+### What This Code Does Overall
+
+This code sets up your SSH agent (a program that remembers your SSH keys) so you don't have to type your password every time you connect to GitHub or other servers. It's like having a key holder that keeps your keys ready to use.
+
+### Line-by-Line Explanation
+
+```bash
+# SSH Agent Configuration
+# Set SSH_AUTH_SOCK to a fixed path to maintain persistence
+export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+```
+- This creates a consistent location for your SSH agent's "socket" (a special file used for communication)
+- Think of it like setting up a mailbox at a fixed address so messages always know where to go
+
+```bash
+# Check if the agent socket exists and is valid
+ssh-add -l &>/dev/null
+```
+- This tries to list the keys in your SSH agent
+- It's like checking if your key holder has any keys in it
+- The `&>/dev/null` part just hides any output messages
+
+```bash
+if [ "$?" -eq 2 ]; then
+```
+- `$?` is a special variable that contains the "exit code" of the previous command
+- Exit code `2` means "the agent socket exists but no agent is connected to it"
+- This is like checking if your mailbox exists but nobody is checking it
+- So this line is asking: "Is the socket file there, but no agent running?"
+
+```bash
+  # Socket exists but agent is not running
+  rm -f "$SSH_AUTH_SOCK"
+  # Start a new agent
+  ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
+```
+- If the socket exists but no agent is running:
+  - Remove the old socket file (`rm -f "$SSH_AUTH_SOCK"`)
+  - Start a new SSH agent and tell it to use our fixed socket location
+  - Like replacing a broken mailbox and assigning someone to check it
+
+```bash
+elif [ "$?" -eq 1 ]; then
+```
+- Exit code `1` means "the agent is running but has no keys loaded"
+- This is checking: "Is the key holder working but empty?"
+
+```bash
+  # Socket exists and agent is running but no keys
+  # No action needed, we'll add keys below
+  :
+```
+- The `:` is a "do nothing" command in bash (a no-op)
+- We don't need to do anything here because we'll add keys later
+- (If exit code is 0, it means everything is working and has keys, so we don't need a condition for that)
+
+```bash
+# Add keys if they exist and aren't already added
+if [ -f "$HOME/.ssh/id_ed25519" ]; then
+```
+- This checks if you have an Ed25519 type SSH key file
+- `-f` tests if a file exists
+
+```bash
+  ssh-add -l | grep -q "$(ssh-keygen -lf "$HOME/.ssh/id_ed25519" | awk '{print $2}')" || ssh-add "$HOME/.ssh/id_ed25519" 2>/dev/null
+```
+This complex line:
+1. Gets the fingerprint of your key file
+2. Checks if that fingerprint is already in the agent
+3. If not found (`||` means "or"), adds the key to the agent
+4. Like checking if your key is already in the key holder, and if not, putting it in
+
+```bash
+if [ -f "$HOME/.ssh/id_rsa" ]; then
+  ssh-add -l | grep -q "$(ssh-keygen -lf "$HOME/.ssh/id_rsa" | awk '{print $2}')" || ssh-add "$HOME/.ssh/id_rsa" 2>/dev/null
+fi
+```
+- Does the same thing but for RSA type SSH keys
+- This is a backup in case you use the older RSA format instead of Ed25519
+
+### High-Level Summary
+
+This code does four main things:
+
+1. **Sets up a consistent location** for the SSH agent to make it persistent across terminal sessions
+2. **Checks the status of the SSH agent** and fixes it if something's wrong:
+   - If the agent isn't running, it starts a new one
+   - If the agent is running but empty, it leaves it alone (we'll add keys next)
+3. **Adds your SSH keys** to the agent if they exist and aren't already added
+4. **Supports multiple key types** (both modern Ed25519 and traditional RSA)
+
+The end result is that your SSH keys are always available when you need them, without you having to type your password every time. It's like having a trusted assistant who always has your keys ready when you need to unlock something.
 
 ### Option 2: Using Keychain
 
@@ -145,103 +241,6 @@ If VS Code terminals aren't picking up your SSH agent:
 2. **Configure the agent to start automatically**: As shown in the examples above
 3. **Limit the lifetime of added keys**: For higher security, you can add the `-t` option to `ssh-add` to limit how long keys are cached
 4. **Use different keys for different services**: Consider using separate keys for GitHub, work servers, etc.
-
-## Detailed Explanation for Beginners
-
-Here's a line-by-line explanation of the recommended SSH agent configuration in simple terms:
-
-### What This Code Does Overall
-
-This code sets up your SSH agent (a program that remembers your SSH keys) so you don't have to type your password every time you connect to GitHub or other servers. It's like having a key holder that keeps your keys ready to use.
-
-### Line-by-Line Explanation
-
-```bash
-# SSH Agent Configuration
-# Set SSH_AUTH_SOCK to a fixed path to maintain persistence
-export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
-```
-- This creates a consistent location for your SSH agent's "socket" (a special file used for communication)
-- Think of it like setting up a mailbox at a fixed address so messages always know where to go
-
-```bash
-# Check if the agent socket exists and is valid
-ssh-add -l &>/dev/null
-```
-- This tries to list the keys in your SSH agent
-- It's like checking if your key holder has any keys in it
-- The `&>/dev/null` part just hides any output messages
-
-```bash
-if [ "$?" -eq 2 ]; then
-```
-- `$?` is a special variable that contains the "exit code" of the previous command
-- Exit code `2` means "the agent socket exists but no agent is connected to it"
-- This is like checking if your mailbox exists but nobody is checking it
-- So this line is asking: "Is the socket file there, but no agent running?"
-
-```bash
-  # Socket exists but agent is not running
-  rm -f "$SSH_AUTH_SOCK"
-  # Start a new agent
-  ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
-```
-- If the socket exists but no agent is running:
-  - Remove the old socket file (`rm -f "$SSH_AUTH_SOCK"`)
-  - Start a new SSH agent and tell it to use our fixed socket location
-  - Like replacing a broken mailbox and assigning someone to check it
-
-```bash
-elif [ "$?" -eq 1 ]; then
-```
-- Exit code `1` means "the agent is running but has no keys loaded"
-- This is checking: "Is the key holder working but empty?"
-
-```bash
-  # Socket exists and agent is running but no keys
-  # No action needed, we'll add keys below
-  :
-```
-- The `:` is a "do nothing" command in bash (a no-op)
-- We don't need to do anything here because we'll add keys later
-- (If exit code is 0, it means everything is working and has keys, so we don't need a condition for that)
-
-```bash
-# Add keys if they exist and aren't already added
-if [ -f "$HOME/.ssh/id_ed25519" ]; then
-```
-- This checks if you have an Ed25519 type SSH key file
-- `-f` tests if a file exists
-
-```bash
-  ssh-add -l | grep -q "$(ssh-keygen -lf "$HOME/.ssh/id_ed25519" | awk '{print $2}')" || ssh-add "$HOME/.ssh/id_ed25519" 2>/dev/null
-```
-This complex line:
-1. Gets the fingerprint of your key file
-2. Checks if that fingerprint is already in the agent
-3. If not found (`||` means "or"), adds the key to the agent
-4. Like checking if your key is already in the key holder, and if not, putting it in
-
-```bash
-if [ -f "$HOME/.ssh/id_rsa" ]; then
-  ssh-add -l | grep -q "$(ssh-keygen -lf "$HOME/.ssh/id_rsa" | awk '{print $2}')" || ssh-add "$HOME/.ssh/id_rsa" 2>/dev/null
-fi
-```
-- Does the same thing but for RSA type SSH keys
-- This is a backup in case you use the older RSA format instead of Ed25519
-
-### High-Level Summary
-
-This code does four main things:
-
-1. **Sets up a consistent location** for the SSH agent to make it persistent across terminal sessions
-2. **Checks the status of the SSH agent** and fixes it if something's wrong:
-   - If the agent isn't running, it starts a new one
-   - If the agent is running but empty, it leaves it alone (we'll add keys next)
-3. **Adds your SSH keys** to the agent if they exist and aren't already added
-4. **Supports multiple key types** (both modern Ed25519 and traditional RSA)
-
-The end result is that your SSH keys are always available when you need them, without you having to type your password every time. It's like having a trusted assistant who always has your keys ready when you need to unlock something.
 
 ## Conclusion
 
