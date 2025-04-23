@@ -126,6 +126,102 @@ git remote set-url origin git@github.com:username/repository.git
 git remote -v
 ```
 
+### Troubleshooting: Constantly Asked for SSH Key Password
+
+If you're repeatedly prompted for your SSH key password in WSL, try these solutions:
+
+#### 1. Ensure SSH Agent is Running Automatically
+
+Add these lines to your `~/.bashrc` or `~/.zshrc` file to start the SSH agent automatically:
+
+```bash
+# Start SSH agent automatically
+if [ -z "$SSH_AUTH_SOCK" ]; then
+   # Check if ssh-agent is already running
+   ps -aux | grep ssh-agent | grep -v grep > /dev/null
+   if [ $? -ne 0 ]; then
+      eval "$(ssh-agent -s)" > /dev/null
+   fi
+fi
+
+# Add your SSH key to the agent automatically
+if [ -f "$HOME/.ssh/id_ed25519" ]; then
+   ssh-add -l | grep "$HOME/.ssh/id_ed25519" > /dev/null
+   if [ $? -ne 0 ]; then
+      ssh-add $HOME/.ssh/id_ed25519 2>/dev/null
+   fi
+fi
+```
+
+After adding these lines, restart your terminal or run `source ~/.bashrc` (or `source ~/.zshrc`).
+
+#### 2. Use SSH Config to Persist Connections
+
+Create or edit `~/.ssh/config` to maintain persistent connections:
+
+```bash
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    AddKeysToAgent yes
+    IdentitiesOnly yes
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist yes
+```
+
+Make sure to create the control directory:
+
+```bash
+mkdir -p ~/.ssh/control
+chmod 700 ~/.ssh/control
+```
+
+#### 3. Use Keychain for Persistent SSH Agent
+
+Install and configure keychain to manage your SSH keys across sessions:
+
+```bash
+# Install keychain
+sudo apt update && sudo apt install keychain
+
+# Add to your ~/.bashrc or ~/.zshrc
+if [ -f "/usr/bin/keychain" ]; then
+    eval $(keychain --eval --quiet id_ed25519)
+fi
+```
+
+#### 4. Check SSH Key Permissions
+
+Incorrect permissions can cause authentication issues:
+
+```bash
+# Set correct permissions for SSH directory and files
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+```
+
+#### 5. Verify SSH Agent Has Your Key
+
+```bash
+# List keys in SSH agent
+ssh-add -l
+
+# If your key isn't listed, add it
+ssh-add ~/.ssh/id_ed25519
+```
+
+#### 6. Test Your SSH Connection
+
+```bash
+# Test connection to GitHub
+ssh -T git@github.com
+```
+
+If successful, you should see a message like: "Hi username! You've successfully authenticated..."
+
 ## Method 3: Using GitHub CLI
 
 ### Step 1: Install GitHub CLI
