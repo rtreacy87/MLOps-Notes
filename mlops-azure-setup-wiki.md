@@ -1,10 +1,9 @@
 # Azure ML Development Environment Setup Wiki
 
-*Written by: Senior MLOps Engineer*
 
 ## Introduction
 
-Welcome to the team! This wiki will guide you through setting up VS Code and Jupyter Notebooks for Azure ML development. By the end of this guide, you'll be able to:
+This wiki will guide you through setting up VS Code and Jupyter Notebooks for Azure ML development. By the end of this guide, you'll be able to:
 
 1. Set up VS Code with Azure ML extensions
 2. Configure Jupyter Notebooks for Azure ML
