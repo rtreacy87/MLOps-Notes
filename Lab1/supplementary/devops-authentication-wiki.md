@@ -56,11 +56,13 @@ git clone https://dev.azure.com/organization/project/_git/repository
 
 ### Step 1: Generate or Reuse SSH Keys
 
-```bash
-# Generate a new SSH key
-ssh-keygen -t ed25519 -C "your_email@example.com"
+**Important Note**: Azure DevOps only accepts RSA keys for SSH authentication. Ed25519 keys are not supported.
 
-# Press Enter to accept default file location
+```bash
+# Generate a new RSA SSH key (4096 bits recommended for security)
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+# Press Enter to accept default file location (typically ~/.ssh/id_rsa)
 # Enter a passphrase (optional but recommended)
 ```
 
@@ -71,7 +73,7 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 eval "$(ssh-agent -s)"
 
 # Add your SSH private key
-ssh-add ~/.ssh/id_ed25519
+ssh-add ~/.ssh/id_rsa
 ```
 
 For persistent SSH agent configuration, refer to the [SSH Agent Configuration Wiki](ssh-agent-configuration.md).
@@ -80,12 +82,12 @@ For persistent SSH agent configuration, refer to the [SSH Agent Configuration Wi
 
 1. Copy your public key:
    ```bash
-   cat ~/.ssh/id_ed25519.pub
+   cat ~/.ssh/id_rsa.pub
    ```
 
 2. Go to Azure DevOps → User settings → SSH public keys
 3. Click "New Key"
-4. Paste the entire key (including `ssh-ed25519` and your email)
+4. Paste the entire key (including `ssh-rsa` and your email)
 5. Give it a descriptive name and save
 
 ### Step 4: Update or Clone with SSH URL
@@ -207,7 +209,7 @@ az devops project list
 
 ## Best Practices
 
-1. **Use SSH keys when possible**: They provide better security and convenience
+1. **Use RSA SSH keys when possible**: They provide better security and convenience (remember Azure DevOps only supports RSA keys, not Ed25519)
 2. **Set token expiration**: Always set reasonable expiration dates for PATs
 3. **Use minimal permissions**: Only grant necessary scopes to tokens
 4. **Regularly rotate credentials**: Update tokens and keys periodically
@@ -215,6 +217,10 @@ az devops project list
 6. **Use service connections**: For CI/CD pipelines, use service connections instead of personal credentials
 
 ## Automating Authentication for CI/CD
+
+### Important Note About SSH Keys for Azure DevOps
+
+Remember that Azure DevOps only supports RSA SSH keys, not Ed25519 keys. When setting up automation or CI/CD processes that use SSH authentication, ensure you're generating and using RSA keys.
 
 For CI/CD pipelines that need to authenticate with Azure DevOps:
 
@@ -244,7 +250,7 @@ The `$(System.AccessToken)` is a predefined variable that contains an automatica
 
 For the best experience with Azure DevOps in WSL:
 
-1. Use SSH keys for daily development work
+1. Use RSA SSH keys for daily development work (Azure DevOps does not support Ed25519 keys)
 2. Use PATs for scripts and automation
 3. Configure Git with your name and email
 4. Set up credential caching if using HTTPS

@@ -310,7 +310,7 @@ To resolve these issues, you have several options:
 For detailed instructions on solving GitHub authentication issues in WSL, refer to the [WSL Git Setup Wiki](supplementary/wsl-git-setup-wiki.md).
 
 
-For detailed instructions on configuring authentication with Azure DevOps repositories [Azure DevOps Authentication Setup](suplementary/devops-authentication-wiki.md)
+For detailed instructions on configuring authentication with Azure DevOps repositories [Azure DevOps Authentication Setup](supplementary/devops-authentication-wiki.md)
 
 ## Next Steps
 
