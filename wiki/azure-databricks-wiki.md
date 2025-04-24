@@ -25,6 +25,8 @@ Azure Databricks is a fast, easy, and collaborative Apache Spark-based analytics
 
 ### Creating a Databricks Workspace
 
+#### Using Azure Portal (GUI)
+
 1. In the Azure Portal, search for "Databricks"
 2. Click "Create" and fill in the details:
    - Workspace name
@@ -35,7 +37,33 @@ Azure Databricks is a fast, easy, and collaborative Apache Spark-based analytics
 3. Click "Review + Create" and then "Create"
 4. Once deployment completes, click "Go to resource" and then "Launch Workspace"
 
+#### Using Azure CLI (Command Line)
+
+```bash
+# Login to Azure (if not already logged in)
+az login
+
+# Create a resource group (if needed)
+az group create --name myResourceGroup --location eastus
+
+# Create Databricks workspace
+az databricks workspace create \
+  --resource-group myResourceGroup \
+  --name myDatabricksWorkspace \
+  --location eastus \
+  --sku standard
+
+# Get workspace URL
+az databricks workspace show \
+  --resource-group myResourceGroup \
+  --name myDatabricksWorkspace \
+  --query workspaceUrl \
+  --output tsv
+```
+
 ### Creating a Cluster
+
+#### Using Databricks UI
 
 1. In the Databricks workspace, click "Compute" in the sidebar
 2. Click "Create Cluster"
@@ -49,15 +77,230 @@ Azure Databricks is a fast, easy, and collaborative Apache Spark-based analytics
    - Auto-termination: Set idle time before shutdown
 4. Click "Create Cluster"
 
+#### Using Databricks CLI
+
+First, install and configure the Databricks CLI:
+
+```bash
+# Install Databricks CLI
+pip install databricks-cli
+
+# Configure with a personal access token
+databricks configure --token
+# Enter your workspace URL and access token when prompted
+```
+
+Then create a cluster using a JSON configuration file:
+
+```bash
+# Create a cluster configuration file
+cat > cluster-config.json << EOF
+{
+  "cluster_name": "my-cluster",
+  "spark_version": "11.3.x-scala2.12",
+  "node_type_id": "Standard_DS3_v2",
+  "autoscale": {
+    "min_workers": 2,
+    "max_workers": 8
+  },
+  "autotermination_minutes": 30,
+  "spark_conf": {
+    "spark.speculation": true
+  },
+  "spark_env_vars": {
+    "PYSPARK_PYTHON": "/databricks/python3/bin/python3"
+  }
+}
+EOF
+
+# Create the cluster
+databricks clusters create --json-file cluster-config.json
+
+# List clusters to verify creation
+databricks clusters list
+
+# Get cluster details
+databricks clusters get --cluster-id <cluster-id>
+```
+
+#### Using Bicep for Infrastructure as Code (IaC)
+
+For automated deployments, we use Bicep as our preferred IaC tool. Bicep provides a more concise and readable syntax compared to ARM templates.
+
+Create a Bicep file for your Databricks workspace (`databricks.bicep`):
+
+```bicep
+@description('The name of the Azure Databricks workspace')
+param workspaceName string
+
+@description('Location for all resources')
+param location string = resourceGroup().location
+
+@description('The pricing tier of the workspace (standard, premium, or trial)')
+@allowed([
+  'standard'
+  'premium'
+  'trial'
+])
+param pricingTier string = 'standard'
+
+@description('Tags to apply to the workspace')
+param tags object = {}
+
+resource databricksWorkspace 'Microsoft.Databricks/workspaces@2023-02-01' = {
+  name: workspaceName
+  location: location
+  sku: {
+    name: pricingTier
+  }
+  properties: {}
+  tags: tags
+}
+
+output workspaceId string = databricksWorkspace.id
+output workspaceUrl string = databricksWorkspace.properties.workspaceUrl
+```
+
+Create a parameters file (`databricks.parameters.json`):
+
+```json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspaceName": {
+      "value": "myDatabricksWorkspace"
+    },
+    "pricingTier": {
+      "value": "standard"
+    },
+    "tags": {
+      "value": {
+        "Environment": "Development",
+        "Project": "DataAnalytics"
+      }
+    }
+  }
+}
+```
+
+Deploy using Azure CLI:
+
+```bash
+# Install Bicep if not already installed
+az bicep install
+
+# Deploy the Bicep template
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file databricks.bicep \
+  --parameters @databricks.parameters.json
+```
+
+For more complex deployments, you can create a Bicep module that includes both the workspace and cluster configuration:
+
+```bicep
+// databricks-with-cluster.bicep
+@description('The name of the Azure Databricks workspace')
+param workspaceName string
+
+@description('Location for all resources')
+param location string = resourceGroup().location
+
+@description('The pricing tier of the workspace')
+param pricingTier string = 'standard'
+
+@description('The name of the Databricks cluster')
+param clusterName string
+
+@description('The Spark version for the cluster')
+param sparkVersion string = '11.3.x-scala2.12'
+
+@description('The VM size for the cluster nodes')
+param nodeType string = 'Standard_DS3_v2'
+
+@description('Minimum number of workers')
+param minWorkers int = 2
+
+@description('Maximum number of workers')
+param maxWorkers int = 8
+
+// Create the Databricks workspace
+resource databricksWorkspace 'Microsoft.Databricks/workspaces@2023-02-01' = {
+  name: workspaceName
+  location: location
+  sku: {
+    name: pricingTier
+  }
+  properties: {}
+}
+
+// Output the workspace details
+output workspaceId string = databricksWorkspace.id
+output workspaceUrl string = databricksWorkspace.properties.workspaceUrl
+```
+
+Note: While Bicep can create the Databricks workspace, creating clusters typically requires using the Databricks API or CLI after the workspace is provisioned, as shown in the CLI section above.
+
 ## Python in Databricks
 
 ### Creating a Python Notebook
+
+#### Using Databricks UI
 
 1. In the Databricks workspace, click "Workspace" in the sidebar
 2. Navigate to your folder or create a new one
 3. Click the dropdown next to your folder and select "Create" > "Notebook"
 4. Enter a name and select "Python" as the language
 5. Click "Create"
+
+#### Using Databricks CLI
+
+```bash
+# Create a folder (if needed)
+databricks workspace mkdirs /Users/your-username/your-folder
+
+# Create a Python notebook
+databricks workspace import_dir \
+  --language PYTHON \
+  --format SOURCE \
+  --content "# My Python Notebook\n\n# COMMAND ----------\n\n# Write your Python code here" \
+  /Users/your-username/your-folder/my-notebook
+
+# List notebooks in the folder
+databricks workspace ls /Users/your-username/your-folder
+
+# Export a notebook
+databricks workspace export \
+  --format SOURCE \
+  /Users/your-username/your-folder/my-notebook \
+  my-notebook.py
+```
+
+#### Using REST API
+
+You can also create notebooks programmatically using the Databricks REST API:
+
+```bash
+# Get your access token and workspace URL first
+TOKEN="your-access-token"
+WORKSPACE_URL="https://your-workspace.azuredatabricks.net"
+
+# Create a notebook using curl
+curl -X POST "${WORKSPACE_URL}/api/2.0/workspace/import" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/Users/your-username/your-folder/my-notebook", "format": "SOURCE", "language": "PYTHON", "content": "IyBNeSBQeXRob24gTm90ZWJvb2sKCiMgQ09NTUFORCAtLS0tLS0tLS0tCgojIFdyaXRlIHlvdXIgUHl0aG9uIGNvZGUgaGVyZQ=="}'
+```
+
+Note: The content is base64 encoded. The decoded content is:
+```
+# My Python Notebook
+
+# COMMAND ----------
+
+# Write your Python code here
+```
 
 ### Basic PySpark Example
 
@@ -125,7 +368,7 @@ jdbc_df = spark.read \
 delta_df = spark.read.format("delta").load("/mnt/delta/mytable")
 
 # Azure Data Lake Storage Gen2
-adls_df = spark.read.csv("abfss://container@account.dfs.core.windows.net/path/to/file.csv", 
+adls_df = spark.read.csv("abfss://container@account.dfs.core.windows.net/path/to/file.csv",
                          header=True, inferSchema=True)
 ```
 
@@ -156,30 +399,30 @@ with mlflow.start_run(run_name="Random Forest Model"):
     # Set parameters
     n_estimators = 100
     max_depth = 10
-    
+
     # Log parameters
     mlflow.log_param("n_estimators", n_estimators)
     mlflow.log_param("max_depth", max_depth)
-    
+
     # Train model
     rf = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
     rf.fit(X_train, y_train)
-    
+
     # Make predictions
     predictions = rf.predict(X_test)
-    
+
     # Log metrics
     mse = mean_squared_error(y_test, predictions)
     rmse = np.sqrt(mse)
     r2 = r2_score(y_test, predictions)
-    
+
     mlflow.log_metric("mse", mse)
     mlflow.log_metric("rmse", rmse)
     mlflow.log_metric("r2", r2)
-    
+
     # Log model
     mlflow.sklearn.log_model(rf, "random_forest_model")
-    
+
     # Display results
     print(f"MSE: {mse:.2f}")
     print(f"RMSE: {rmse:.2f}")
@@ -246,16 +489,16 @@ parquet_df <- read.df("/mnt/data/mydata.parquet", source = "parquet")
 json_df <- read.df("/mnt/data/mydata.json", source = "json")
 
 # JDBC (SQL Database)
-jdbc_df <- read.jdbc("jdbc:sqlserver://server:1433;database=mydb", 
-                     "schema.table", 
-                     user = "username", 
+jdbc_df <- read.jdbc("jdbc:sqlserver://server:1433;database=mydb",
+                     "schema.table",
+                     user = "username",
                      password = "password")
 
 # Delta Lake
 delta_df <- read.df("/mnt/delta/mytable", source = "delta")
 
 # Azure Data Lake Storage Gen2
-adls_df <- read.df("abfss://container@account.dfs.core.windows.net/path/to/file.csv", 
+adls_df <- read.df("abfss://container@account.dfs.core.windows.net/path/to/file.csv",
                    source = "csv", header = "true", inferSchema = "true")
 ```
 

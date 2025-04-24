@@ -121,7 +121,7 @@ import pandas as pd
 spark = SparkSession.builder.appName("DataProcessing").getOrCreate()
 
 # Read data
-df = spark.read.csv("abfss://container@storageaccount.dfs.core.windows.net/path/to/data.csv", 
+df = spark.read.csv("abfss://container@storageaccount.dfs.core.windows.net/path/to/data.csv",
                     header=True, inferSchema=True)
 
 # Transform data
@@ -150,7 +150,7 @@ library(dplyr)
 sparkR.session()
 
 # Read data
-df <- read.df("abfss://container@storageaccount.dfs.core.windows.net/path/to/data.csv", 
+df <- read.df("abfss://container@storageaccount.dfs.core.windows.net/path/to/data.csv",
               source = "csv", header = "true", inferSchema = "true")
 
 # Transform data
@@ -158,9 +158,208 @@ result_df <- df %>%
   mutate(transformed_column = toupper(original_column))
 
 # Write results
-write.df(result_df, 
+write.df(result_df,
          path = "abfss://container@storageaccount.dfs.core.windows.net/path/to/output/",
          source = "parquet", mode = "overwrite")
+```
+
+## Infrastructure as Code with Bicep
+
+We use Bicep as our preferred Infrastructure as Code (IaC) tool for deploying Azure Data Factory and Synapse Analytics resources.
+
+### Deploying Azure Data Factory with Bicep
+
+```bicep
+@description('The name of the Azure Data Factory')
+param dataFactoryName string
+
+@description('Location for all resources')
+param location string = resourceGroup().location
+
+@description('Tags to apply to resources')
+param tags object = {}
+
+// Create Data Factory
+resource dataFactory 'Microsoft.DataFactory/factories@2018-06-01' = {
+  name: dataFactoryName
+  location: location
+  tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {}
+}
+
+// Create Azure Storage linked service
+resource storageLinkedService 'Microsoft.DataFactory/factories/linkedservices@2018-06-01' = {
+  parent: dataFactory
+  name: 'AzureStorageLinkedService'
+  properties: {
+    type: 'AzureBlobStorage'
+    typeProperties: {
+      connectionString: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey}'
+    }
+  }
+}
+
+// Create a simple pipeline
+resource pipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-01' = {
+  parent: dataFactory
+  name: 'CopyDataPipeline'
+  properties: {
+    activities: [
+      {
+        name: 'CopyFromBlobToBlob'
+        type: 'Copy'
+        typeProperties: {
+          source: {
+            type: 'BlobSource'
+            recursive: true
+          }
+          sink: {
+            type: 'BlobSink'
+            copyBehavior: 'PreserveHierarchy'
+          }
+        }
+        inputs: [
+          {
+            referenceName: 'InputDataset'
+            type: 'DatasetReference'
+          }
+        ]
+        outputs: [
+          {
+            referenceName: 'OutputDataset'
+            type: 'DatasetReference'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+output dataFactoryId string = dataFactory.id
+```
+
+### Deploying Azure Synapse Analytics with Bicep
+
+```bicep
+@description('The name of the Synapse workspace')
+param synapseWorkspaceName string
+
+@description('The name of the SQL admin account')
+param sqlAdministratorLogin string
+
+@description('The password for the SQL admin account')
+@secure()
+param sqlAdministratorPassword string
+
+@description('The name of the storage account')
+param storageAccountName string
+
+@description('The name of the storage account container')
+param storageAccountContainer string = 'synapse'
+
+@description('Location for all resources')
+param location string = resourceGroup().location
+
+// Create Storage Account
+resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
+  name: storageAccountName
+  location: location
+  kind: 'StorageV2'
+  sku: {
+    name: 'Standard_LRS'
+  }
+  properties: {
+    isHnsEnabled: true
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Allow'
+    }
+    supportsHttpsTrafficOnly: true
+    encryption: {
+      services: {
+        file: {
+          keyType: 'Account'
+          enabled: true
+        }
+        blob: {
+          keyType: 'Account'
+          enabled: true
+        }
+      }
+      keySource: 'Microsoft.Storage'
+    }
+  }
+}
+
+// Create Storage Account container
+resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-08-01' = {
+  name: '${storageAccount.name}/default/${storageAccountContainer}'
+}
+
+// Create Synapse workspace
+resource synapseWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
+  name: synapseWorkspaceName
+  location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    defaultDataLakeStorage: {
+      accountUrl: 'https://${storageAccountName}.dfs.core.windows.net'
+      filesystem: storageAccountContainer
+    }
+    sqlAdministratorLogin: sqlAdministratorLogin
+    sqlAdministratorLoginPassword: sqlAdministratorPassword
+  }
+}
+
+// Create Spark Pool
+resource sparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = {
+  parent: synapseWorkspace
+  name: 'sparkpool'
+  location: location
+  properties: {
+    nodeCount: 3
+    nodeSizeFamily: 'MemoryOptimized'
+    nodeSize: 'Small'
+    autoScale: {
+      enabled: true
+      minNodeCount: 3
+      maxNodeCount: 10
+    }
+    autoPause: {
+      enabled: true
+      delayInMinutes: 15
+    }
+    sparkVersion: '3.1'
+  }
+}
+
+output synapseWorkspaceId string = synapseWorkspace.id
+output sparkPoolId string = sparkPool.id
+```
+
+### Deployment Process
+
+1. Save the Bicep files to your project
+2. Create parameter files for different environments
+3. Deploy using Azure CLI:
+
+```bash
+# Deploy Data Factory
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file data-factory.bicep \
+  --parameters @data-factory.parameters.json
+
+# Deploy Synapse Analytics
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file synapse.bicep \
+  --parameters @synapse.parameters.json
 ```
 
 ## Next Steps

@@ -29,11 +29,127 @@ Azure Functions is a serverless compute service that enables you to run code on-
    - Azure Functions Core Tools
 
 2. **Create a Function App**:
+
+   #### Using Azure CLI
    ```bash
    # Using Azure CLI
    az group create --name myResourceGroup --location eastus
    az storage account create --name mystorageacct --location eastus --resource-group myResourceGroup --sku Standard_LRS
    az functionapp create --resource-group myResourceGroup --consumption-plan-location eastus --runtime python --runtime-version 3.9 --functions-version 4 --name mypythonfunctionapp --storage-account mystorageacct --os-type linux
+   ```
+
+   #### Using Bicep (Infrastructure as Code)
+   ```bicep
+   @description('The name of the function app')
+   param functionAppName string
+
+   @description('Storage account name')
+   param storageAccountName string
+
+   @description('Location for all resources')
+   param location string = resourceGroup().location
+
+   @description('The language worker runtime to load in the function app')
+   @allowed([
+     'python'
+     'node'
+     'dotnet'
+     'java'
+   ])
+   param runtime string = 'python'
+
+   @description('The Python version to use')
+   param pythonVersion string = '3.9'
+
+   var functionAppServicePlanName = '${functionAppName}-plan'
+   var applicationInsightsName = '${functionAppName}-insights'
+
+   // Storage Account
+   resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
+     name: storageAccountName
+     location: location
+     sku: {
+       name: 'Standard_LRS'
+     }
+     kind: 'StorageV2'
+   }
+
+   // App Service Plan (Consumption)
+   resource functionAppServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+     name: functionAppServicePlanName
+     location: location
+     sku: {
+       name: 'Y1'
+       tier: 'Dynamic'
+     }
+     properties: {
+       reserved: true // Required for Linux
+     }
+   }
+
+   // Application Insights
+   resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+     name: applicationInsightsName
+     location: location
+     kind: 'web'
+     properties: {
+       Application_Type: 'web'
+       Request_Source: 'rest'
+     }
+   }
+
+   // Function App
+   resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
+     name: functionAppName
+     location: location
+     kind: 'functionapp,linux'
+     properties: {
+       serverFarmId: functionAppServicePlan.id
+       siteConfig: {
+         linuxFxVersion: 'PYTHON|${pythonVersion}'
+         appSettings: [
+           {
+             name: 'AzureWebJobsStorage'
+             value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+           }
+           {
+             name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+             value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+           }
+           {
+             name: 'WEBSITE_CONTENTSHARE'
+             value: toLower(functionAppName)
+           }
+           {
+             name: 'FUNCTIONS_EXTENSION_VERSION'
+             value: '~4'
+           }
+           {
+             name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+             value: applicationInsights.properties.InstrumentationKey
+           }
+           {
+             name: 'FUNCTIONS_WORKER_RUNTIME'
+             value: runtime
+           }
+         ]
+         ftpsState: 'Disabled'
+         minTlsVersion: '1.2'
+       }
+       httpsOnly: true
+     }
+   }
+
+   output functionAppId string = functionApp.id
+   output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
+   ```
+
+   Deploy using Azure CLI:
+   ```bash
+   az deployment group create \
+     --resource-group myResourceGroup \
+     --template-file function-app.bicep \
+     --parameters functionAppName=mypythonfunctionapp storageAccountName=mystorageacct
    ```
 
 3. **Create a Local Function Project**:
@@ -60,14 +176,14 @@ def main(req: func.HttpRequest, outputBlob: func.Out[str]) -> func.HttpResponse:
     try:
         # Get request body
         req_body = req.get_json()
-        
+
         # Convert to DataFrame
         df = pd.DataFrame(req_body['data'])
-        
+
         # Process data
         df['processed_at'] = datetime.now().isoformat()
         df['value_squared'] = df['value'].apply(lambda x: x ** 2)
-        
+
         # Calculate statistics
         stats = {
             'mean': float(df['value'].mean()),
@@ -75,16 +191,16 @@ def main(req: func.HttpRequest, outputBlob: func.Out[str]) -> func.HttpResponse:
             'std_dev': float(df['value'].std()),
             'count': int(df['value'].count())
         }
-        
+
         # Prepare results
         results = {
             'stats': stats,
             'processed_data': df.to_dict(orient='records')
         }
-        
+
         # Write to blob storage
         outputBlob.set(json.dumps(results))
-        
+
         return func.HttpResponse(
             json.dumps(results),
             mimetype="application/json",
@@ -153,19 +269,19 @@ import os
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processing request to execute R code.')
-    
+
     try:
         # Get request body
         req_body = req.get_json()
         input_data = req_body.get('data')
-        
+
         # Create temporary files for input and output
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as input_file:
             input_file_path = input_file.name
             json.dump(input_data, input_file)
-        
+
         output_file_path = input_file_path + '_output.json'
-        
+
         # Create R script file
         r_script_path = os.path.join(tempfile.gettempdir(), 'script.R')
         with open(r_script_path, 'w') as r_file:
@@ -173,18 +289,18 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             # Load libraries
             library(jsonlite)
             library(dplyr)
-            
+
             # Read input data
             input_path <- commandArgs(trailingOnly = TRUE)[1]
             output_path <- commandArgs(trailingOnly = TRUE)[2]
-            
+
             data <- fromJSON(input_path)
-            
+
             # Process data
             results <- data %>%
               mutate(value_squared = value^2) %>%
               mutate(timestamp = Sys.time())
-            
+
             # Calculate statistics
             stats <- list(
               mean = mean(data$value),
@@ -192,29 +308,29 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
               std_dev = sd(data$value),
               count = length(data$value)
             )
-            
+
             # Prepare output
             output <- list(
               stats = stats,
               processed_data = results
             )
-            
+
             # Write output
             write_json(output, output_path)
             ''')
-        
+
         # Execute R script
         subprocess.run(['Rscript', r_script_path, input_file_path, output_file_path], check=True)
-        
+
         # Read results
         with open(output_file_path, 'r') as output_file:
             results = json.load(output_file)
-        
+
         # Clean up temporary files
         os.unlink(input_file_path)
         os.unlink(output_file_path)
         os.unlink(r_script_path)
-        
+
         return func.HttpResponse(
             json.dumps(results),
             mimetype="application/json",
@@ -235,18 +351,18 @@ For more complex R integration, create a custom Docker container:
 1. **Create a Dockerfile**:
    ```dockerfile
    FROM mcr.microsoft.com/azure-functions/python:4-python3.9
-   
+
    # Install R
    RUN apt-get update && \
        apt-get install -y r-base r-base-dev && \
        apt-get clean
-   
+
    # Install R packages
    RUN R -e "install.packages(c('jsonlite', 'dplyr', 'tidyr'), repos='https://cloud.r-project.org/')"
-   
+
    # Copy function app files
    COPY . /home/site/wwwroot
-   
+
    # Install Python dependencies
    RUN cd /home/site/wwwroot && \
        pip install -r requirements.txt
