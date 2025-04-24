@@ -92,6 +92,8 @@ For persistent SSH agent configuration, refer to the [SSH Agent Configuration Wi
 
 ### Step 4: Update or Clone with SSH URL
 
+**Important**: For SSH authentication to work, you must use the SSH URL format for your repositories. If you're still being prompted for a password after setting up SSH keys, this is the most likely cause.
+
 For existing repositories, update the remote URL:
 
 ```bash
@@ -100,6 +102,7 @@ git remote set-url origin git@ssh.dev.azure.com:v3/organization/project/reposito
 
 # Verify the change
 git remote -v
+# Should show git@ssh.dev.azure.com:... not https://...
 ```
 
 For new repositories, clone using SSH:
@@ -107,6 +110,8 @@ For new repositories, clone using SSH:
 ```bash
 git clone git@ssh.dev.azure.com:v3/organization/project/repository
 ```
+
+**Note**: The SSH URL format for Azure DevOps is different from the HTTPS format. Make sure you're using the correct format: `git@ssh.dev.azure.com:v3/organization/project/repository`
 
 ## Method 3: Using Azure CLI Authentication
 
@@ -147,6 +152,38 @@ This allows your WSL Git to use the same credentials as your Windows Git install
 
 ## Troubleshooting
 
+### Still Prompted for Password Despite SSH Key Setup
+
+If you're still being prompted for a password when pushing to Azure DevOps even after setting up SSH keys, the most common cause is that your repository is still using an HTTPS URL instead of SSH.
+
+```bash
+# Check your current remote URL
+git remote -v
+# If it shows https://... URLs, you need to change to SSH format
+
+# Change the remote URL to use SSH
+git remote set-url origin git@ssh.dev.azure.com:v3/organization/project/repository
+# Replace organization, project, and repository with your actual values
+
+# Verify the change
+git remote -v
+# Should now show git@ssh.dev.azure.com:... URLs
+```
+
+Example of what you might see:
+
+```
+# Before:
+origin  https://username@dev.azure.com/organization/project/_git/repository (fetch)
+origin  https://username@dev.azure.com/organization/project/_git/repository (push)
+
+# After:
+origin  git@ssh.dev.azure.com:v3/organization/project/repository (fetch)
+origin  git@ssh.dev.azure.com:v3/organization/project/repository (push)
+```
+
+After changing the URL, try pushing again. You should no longer be prompted for a password if your SSH key is properly set up.
+
 ### Clear Cached Credentials
 
 ```bash
@@ -173,6 +210,17 @@ If you encounter permission issues:
 2. Check if your PAT has expired
 3. Ensure your SSH key is properly added to Azure DevOps
 4. Verify you're using the correct organization and project names
+5. Check that you're using an RSA key (not Ed25519) as Azure DevOps only supports RSA keys
+6. Verify SSH key permissions (600 for private key, 644 for public key)
+
+```bash
+# Check SSH key permissions
+ls -la ~/.ssh/id_rsa*
+
+# Fix permissions if needed
+chmod 600 ~/.ssh/id_rsa
+chmod 644 ~/.ssh/id_rsa.pub
+```
 
 ## Setting Up Continuous Integration with Azure DevOps
 
