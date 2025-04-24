@@ -309,6 +309,9 @@ To resolve these issues, you have several options:
 
 For detailed instructions on solving GitHub authentication issues in WSL, refer to the [WSL Git Setup Wiki](supplementary/wsl-git-setup-wiki.md).
 
+
+For detailed instructions on configuring authentication with Azure DevOps repositories [Azure DevOps Authentication Setup](suplementary/devops-authentication-wiki.md)
+
 ## Next Steps
 
 After setting up WSL with Ubuntu, proceed to [configuring VS Code to use WSL](03-vscode-wsl-integration.md).
