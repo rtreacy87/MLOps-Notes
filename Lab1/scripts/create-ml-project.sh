@@ -77,9 +77,11 @@ dependencies:
     - flake8
 EOF
 
-# Create the Conda environment
-echo "Creating Conda environment '$PROJECT_NAME'..."
-conda env create -f environment.yml
+# Note about environment creation
+echo "Environment file created. To create and activate the Conda environment, run:"
+echo "conda env create -f environment.yml"
+echo "conda activate $PROJECT_NAME"
+echo "See the Virtual Environments Wiki for more efficient environment management."
 
 # Create a .gitignore file
 cat > .gitignore << EOF
@@ -148,11 +150,12 @@ cat > .vscode/settings.json << EOF
 }
 EOF
 
-# Register the kernel for Jupyter
-echo "Registering Jupyter kernel..."
-conda activate $PROJECT_NAME
-python -m ipykernel install --user --name=$PROJECT_NAME --display-name="Python ($PROJECT_NAME)"
+# Note about Jupyter kernel registration
+echo "After creating the environment, register the Jupyter kernel with:"
+echo "conda activate $PROJECT_NAME"
+echo "python -m ipykernel install --user --name=$PROJECT_NAME --display-name=\"Python ($PROJECT_NAME)\""
 
 echo "Project $PROJECT_NAME has been created at $PROJECT_DIR"
 echo "To activate the Conda environment, run: conda activate $PROJECT_NAME"
 echo "To open it in VS Code, run: code $PROJECT_DIR"
+echo "For efficient environment management, refer to the Virtual Environments Wiki"

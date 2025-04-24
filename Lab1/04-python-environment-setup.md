@@ -2,6 +2,8 @@
 
 This guide covers how to install Python and set up both venv and Conda virtual environments for ML development using infrastructure as code principles.
 
+> **Note:** For efficient management of virtual environments to minimize shell startup time, refer to the [Virtual Environments Wiki](supplementary/virtual-environments-wiki.md).
+
 ## Prerequisites
 
 - [WSL with Ubuntu installed](02-wsl-setup.md)
@@ -282,10 +284,10 @@ from pathlib import Path
 def load_csv(file_path):
     """
     Load a CSV file into a pandas DataFrame.
-    
+
     Args:
         file_path: Path to the CSV file
-        
+
     Returns:
         pandas.DataFrame: The loaded data
     """
@@ -295,14 +297,14 @@ def load_csv(file_path):
 def save_csv(df, file_path):
     """
     Save a pandas DataFrame to a CSV file.
-    
+
     Args:
         df: pandas.DataFrame to save
         file_path: Path where the CSV file will be saved
     """
     # Create directory if it doesn't exist
     Path(file_path).parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Save the DataFrame
     df.to_csv(file_path, index=False)
     print(f"Data saved to {file_path}")
@@ -327,21 +329,21 @@ def test_save_and_load_csv():
     # Create a sample DataFrame
     data = {'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']}
     df = pd.DataFrame(data)
-    
+
     # Create a temporary file
     with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as tmp:
         tmp_path = tmp.name
-    
+
     try:
         # Save the DataFrame
         save_csv(df, tmp_path)
-        
+
         # Check that the file exists
         assert os.path.exists(tmp_path)
-        
+
         # Load the DataFrame
         loaded_df = load_csv(tmp_path)
-        
+
         # Check that the loaded DataFrame is equal to the original
         pd.testing.assert_frame_equal(df, loaded_df)
     finally:

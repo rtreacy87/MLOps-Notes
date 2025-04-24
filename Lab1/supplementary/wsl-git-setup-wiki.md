@@ -403,6 +403,10 @@ For the best experience with Git in WSL:
 
 With these configurations, you should be able to push to GitHub repositories from WSL without authentication issues.
 
+## Virtual Environment Management
+
+For efficient setup and teardown of Python virtual environments (venv and conda) to minimize shell startup time, refer to the [Virtual Environments Wiki](virtual-environments-wiki.md).
+
 ## Appendix: Automatic Git Repository Updates
 
 ### Setting Up a Cron Job to Auto-Pull Changes

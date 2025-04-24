@@ -36,11 +36,8 @@ if [[ $install_docker == "y" ]]; then
     echo "Docker installed. You'll need to log out and back in for group changes to take effect."
 fi
 
-# Set up Python virtual environment
-echo "Setting up Python virtual environment..."
+# Create projects directory
+echo "Creating projects directory..."
 mkdir -p ~/projects/mlops
-cd ~/projects/mlops
-python3 -m venv venv
-echo 'source ~/projects/mlops/venv/bin/activate' >> ~/.bashrc
 
 echo "Environment setup complete!"
