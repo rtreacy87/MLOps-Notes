@@ -40,6 +40,33 @@ pass edit category/service/username
 pass rm category/service/username
 ```
 
+### Renaming Password Entries
+
+If you need to rename a password entry (for example, changing `home/github/username` to `home/github.com/username`), you can use the `mv` command in pass:
+
+```bash
+# Rename a password entry
+pass mv home/github/username home/github.com/username
+
+# Verify the new path works
+pass home/github.com/username
+
+# Verify the old path no longer exists
+pass home/github/username  # Should show "Error: home/github/username is not in the password store."
+```
+
+You can also move entries between different categories:
+
+```bash
+# Move from personal to work category
+pass mv personal/github/username work/github/username
+
+# Move an entire directory
+pass mv personal/github work/github
+```
+
+If you're using Git with pass, these changes are automatically committed with a message like "Rename password from X to Y".
+
 ### Storing and Retrieving Usernames and Emails
 
 When storing usernames or emails, it's important to understand that `pass` expects you to enter the password/content after running the insert command, not as part of the command itself:
