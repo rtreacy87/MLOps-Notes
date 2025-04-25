@@ -18,6 +18,8 @@ This guide covers how to set up `pass`, the standard Unix password manager, for 
 - Command-line interface with bash completion
 - Can be extended with plugins
 
+For a comprehensive guide on using `pass` effectively, including synchronization across devices, browser integration, mobile access, and automation, see our [Pass Workflow Guide](supplementary/pass-workflow-wiki.md).
+
 ## Installation and Setup
 
 ### Step 1: Install Required Packages

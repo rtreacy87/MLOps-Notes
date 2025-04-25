@@ -41,6 +41,8 @@ Password managers provide a secure way to store, organize, and access credential
 
 `pass` is a lightweight, command-line password manager that follows the Unix philosophy. It uses GPG for encryption and Git for version control, making it ideal for developers and MLOps engineers.
 
+For a comprehensive guide on using `pass` effectively, including synchronization across devices, browser integration, mobile access, and automation, see our [Pass Workflow Guide](../Lab1/supplementary/pass-workflow-wiki.md).
+
 #### Setting Up Pass on Linux
 
 ```bash
