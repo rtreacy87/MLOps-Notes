@@ -214,6 +214,202 @@ pass insert work/aws/access-key
 
 ## Synchronizing Across Devices
 
+### Understanding GPG Keys and Pass Synchronization
+
+When using `pass` across multiple devices, it's important to understand that:
+
+1. The password store (encrypted files) can be synchronized via Git
+2. Each device needs to have `pass` installed separately
+3. **Most importantly**: You need the same GPG key on all devices to decrypt the passwords
+
+### Step-by-Step Guide: Sharing Pass Between Windows WSL and Mac
+
+This guide explains how to set up `pass` on two different machines (Windows WSL and Mac) and share the password store between them.
+
+#### Step 1: Set Up the First Device (Windows WSL)
+
+```bash
+# Install pass on WSL
+sudo apt update
+sudo apt install pass gnupg2
+
+# Generate a GPG key if you don't have one
+gpg --full-generate-key
+# Choose RSA and RSA, 4096 bits, and set an expiration if desired
+# Enter your name and email
+# Set a secure passphrase
+
+# Get your GPG key ID
+gpg --list-secret-keys --keyid-format LONG
+# Look for a line like: sec rsa4096/1A2B3C4D5E6F7G8H
+# The part after the slash is your key ID
+
+# Initialize pass with your GPG key
+pass init "YOUR_GPG_KEY_ID"
+
+# Set up Git for your password store
+pass git init
+```
+
+#### Step 2: Export Your GPG Key
+
+You need to transfer your GPG key to your Mac. First, export the key:
+
+```bash
+# Export your public and private keys (replace with your actual key ID)
+gpg --export-secret-keys --armor YOUR_GPG_KEY_ID > ~/gpg-private-key.asc
+gpg --export --armor YOUR_GPG_KEY_ID > ~/gpg-public-key.asc
+
+# Export your trust database
+gpg --export-ownertrust > ~/gpg-ownertrust.txt
+```
+
+#### Step 3: Transfer the GPG Key Securely
+
+Transfer these files to your Mac using a secure method:
+
+**Option 1: Secure File Transfer**
+```bash
+# Using scp (if SSH is set up between machines)
+scp ~/gpg-*.* username@mac-hostname:~
+```
+
+**Option 2: Encrypted Archive**
+```bash
+# Create an encrypted archive
+tar -czf ~/gpg-keys.tar.gz ~/gpg-*.*
+zip -e ~/gpg-keys.zip ~/gpg-*.*  # Password-protected zip
+
+# Transfer via USB drive or secure file sharing service
+```
+
+**Option 3: Using GitHub for GPG Key Transfer**
+
+GitHub has a section for GPG keys, but this is **NOT recommended** for transferring private keys:
+
+```bash
+# DO NOT DO THIS FOR PRIVATE KEYS - SHOWN FOR EDUCATIONAL PURPOSES ONLY
+
+# GitHub's GPG key section is designed for adding your public GPG key only
+# This allows GitHub to verify your commits are signed by you
+# It is NOT designed for transferring private keys between devices
+
+# You could technically add your public key to GitHub:
+gpg --export --armor YOUR_GPG_KEY_ID > ~/gpg-public-key.asc
+# Then add this public key to GitHub in Settings > SSH and GPG keys
+
+# But NEVER add your private key to GitHub or any public repository
+# gpg --export-secret-keys --armor YOUR_GPG_KEY_ID > ~/gpg-private-key.asc  # DO NOT UPLOAD THIS!
+```
+
+**Is using GitHub for GPG key transfer reasonable?**
+- For public keys: Yes, this is fine and is actually GitHub's intended use case
+- For private keys: **Absolutely not** - this would be a serious security risk
+- Private GPG keys should never be stored in any public or shared repository
+- Even private GitHub repositories aren't designed for secure key storage
+- If your private key is compromised, all your encrypted passwords could be decrypted
+
+> **IMPORTANT**: Never transfer your private key via unencrypted email, insecure file sharing, or any public/shared repository. This key can decrypt all your passwords!
+
+#### Step 4: Set Up the Second Device (Mac)
+
+```bash
+# Install pass and GPG on Mac
+brew install pass gnupg pinentry-mac
+
+# Configure GPG to use the macOS pinentry program
+mkdir -p ~/.gnupg
+cat > ~/.gnupg/gpg-agent.conf << EOF
+pinentry-program $(which pinentry-mac)
+default-cache-ttl 600
+max-cache-ttl 7200
+EOF
+chmod 700 ~/.gnupg
+chmod 600 ~/.gnupg/*
+
+# Import your GPG keys
+gpg --import ~/gpg-public-key.asc
+gpg --import ~/gpg-private-key.asc
+
+# Import your trust database
+gpg --import-ownertrust ~/gpg-ownertrust.txt
+
+# Verify the key was imported correctly
+gpg --list-secret-keys --keyid-format LONG
+```
+
+#### Step 5: Set Up Git Repository for Pass
+
+On your Windows WSL machine:
+
+```bash
+# Create a GitHub repository for your password store
+# Then add it as a remote to your pass git repository
+pass git remote add origin git@github.com:username/password-store.git
+
+# Push your password store to GitHub
+pass git push -u origin main
+# Note: Older versions of Git might use 'master' instead of 'main'
+```
+
+On your Mac:
+
+```bash
+# Initialize pass with the same GPG key ID you imported
+pass init "YOUR_GPG_KEY_ID"
+
+# Clone your password store from GitHub
+git clone git@github.com:username/password-store.git ~/.password-store
+
+# Verify you can access your passwords
+pass
+```
+
+#### Step 6: Test the Setup
+
+On your Mac, try to access a password that was created on your Windows WSL machine:
+
+```bash
+# View a password
+pass home/github/username
+
+# If this works, your setup is correct!
+```
+
+### Sharing a Single Password File (Alternative Method)
+
+If you only need to share a single password and don't want to set up full synchronization:
+
+```bash
+# On Windows WSL, export the encrypted password file
+cp ~/.password-store/home/github/username.gpg ~/username.gpg
+
+# Transfer this file to your Mac securely
+scp ~/username.gpg username@mac-hostname:~
+
+# On Mac, after importing the GPG key as described above
+mkdir -p ~/.password-store/home/github
+cp ~/username.gpg ~/.password-store/home/github/
+
+# Now you can access this password
+pass home/github/username
+```
+
+### Common Issues and Solutions
+
+1. **"Error: home/github/username is not in the password store"**
+   - Check if the .gpg file exists in the correct location
+   - Verify you're using the correct path
+
+2. **"gpg: decryption failed: No secret key"**
+   - The GPG key used to encrypt the password is not available on this device
+   - Import the correct GPG key following the steps above
+
+3. **"gpg: public key decryption failed: Inappropriate ioctl for device"**
+   - This usually means GPG can't request your passphrase
+   - On Mac, ensure pinentry-mac is configured correctly
+   - On WSL, you might need to install and configure pinentry-curses
+
 ### Setting Up Git Synchronization
 
 Pass integrates with Git for version control and synchronization:
@@ -239,7 +435,7 @@ To set up pass on a new device with your existing store:
 
 ```bash
 # 1. Install pass and import your GPG key
-# (See the setup guide for details)
+# (See the detailed steps above)
 
 # 2. Clone your password store
 git clone git@github.com:username/password-store.git ~/.password-store
