@@ -86,6 +86,66 @@ echo "no-permission-warning" >> ~/.gnupg/gpg.conf
 gpgconf --kill gpg-agent
 ```
 
+**Line-by-Line Explanation:**
+
+1. `CURRENT_USER=$(whoami)`
+   - **What it does:** Gets your current username and stores it in the variable `CURRENT_USER`
+   - **Why it's important:** We need your username to set the correct ownership of the .gnupg directory
+   - **How to verify:** To check if the variable was set correctly, run `echo $CURRENT_USER` - this should display your username
+   - **If you get an error:** If you see `zsh: bad substitution`, your shell might be interpreting the `$` character differently. Try running this command by itself first, or replace it with your actual username manually
+
+2. `sudo chown -R "$CURRENT_USER:staff" ~/.gnupg`
+   - **What it does:** Changes the ownership of the .gnupg directory and all its contents to your user and the staff group
+   - **Why it's important:** GPG requires that you own your .gnupg directory
+   - **If you get an error:** Replace `"$CURRENT_USER:staff"` with your actual username, like `"john:staff"` or just run `sudo chown -R $(whoami):staff ~/.gnupg` as a single command
+
+3. `chmod 700 ~/.gnupg`
+   - **What it does:** Sets permissions on the .gnupg directory so only you can access it
+   - **Why it's important:** GPG requires that only the owner can read, write, or enter the directory
+   - **No modification needed:** This should work as is
+
+4. `find ~/.gnupg -type f -exec chmod 600 {} \; 2>/dev/null || true`
+   - **What it does:** Finds all files in the .gnupg directory and sets permissions so only you can read/write them
+   - **Why it's important:** GPG requires that all configuration files have strict permissions
+   - **No modification needed:** The `2>/dev/null || true` part suppresses errors if no files exist yet
+
+5. `find ~/.gnupg -type d -exec chmod 700 {} \; 2>/dev/null || true`
+   - **What it does:** Finds all subdirectories in .gnupg and sets permissions so only you can access them
+   - **Why it's important:** GPG requires that all directories have strict permissions
+   - **No modification needed:** This should work as is
+
+6. `touch ~/.gnupg/gpg.conf`
+   - **What it does:** Creates an empty gpg.conf file if it doesn't exist
+   - **Why it's important:** We need this file to add configuration options
+   - **No modification needed:** This should work as is
+
+7. `chmod 600 ~/.gnupg/gpg.conf`
+   - **What it does:** Sets permissions on the gpg.conf file so only you can read/write it
+   - **Why it's important:** GPG requires that configuration files have strict permissions
+   - **No modification needed:** This should work as is
+
+8. `echo "no-permission-warning" >> ~/.gnupg/gpg.conf`
+   - **What it does:** Adds an option to gpg.conf to suppress permission warnings
+   - **Why it's important:** This is a fallback in case the permission fixes don't resolve all warnings
+   - **No modification needed:** This should work as is
+
+9. `gpgconf --kill gpg-agent`
+   - **What it does:** Restarts the GPG agent to apply all the changes
+   - **Why it's important:** Changes won't take effect until the agent is restarted
+   - **No modification needed:** This should work as is
+
+**Alternative Fix for zsh Users:**
+
+If you're using zsh and experiencing the "bad substitution" error, try these commands instead:
+
+```bash
+# Set ownership manually (replace 'yourusername' with your actual username)
+sudo chown -R yourusername:staff ~/.gnupg
+
+# Or use this single command that doesn't require variables
+sudo chown -R $(whoami):staff ~/.gnupg
+```
+
 ### Step 2: Generate a GPG Key Pair
 
 Before using `pass`, you need to create a GPG key pair:

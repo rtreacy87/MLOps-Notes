@@ -28,8 +28,15 @@ echo "Configuring GPG..."
 mkdir -p ~/.gnupg
 
 # Set the correct ownership (get current user)
-CURRENT_USER=$(whoami)
-sudo chown -R "$CURRENT_USER:staff" ~/.gnupg
+# First, verify the current username
+echo "Current user: $(whoami)"
+
+# Using a direct command to avoid shell-specific variable issues
+sudo chown -R "$(whoami):staff" ~/.gnupg
+
+# Note: If the above command fails with 'bad substitution' error in zsh,
+# uncomment and use the following line instead, replacing 'yourusername' with your actual username:
+# sudo chown -R yourusername:staff ~/.gnupg
 
 # Set the correct permissions for the directory
 chmod 700 ~/.gnupg

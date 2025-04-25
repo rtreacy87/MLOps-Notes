@@ -120,10 +120,10 @@ sudo chown -R username:staff ~/.gnupg
 chmod 700 ~/.gnupg
 
 # Set the correct permissions for all files in the directory
-find ~/.gnupg -type f -exec chmod 600 {} \;
+find ~/.gnupg -type f -exec chmod 600 {} \; 2>/dev/null || true
 
 # Set the correct permissions for all subdirectories
-find ~/.gnupg -type d -exec chmod 700 {} \;
+find ~/.gnupg -type d -exec chmod 700 {} \; 2>/dev/null || true
 
 # Create a gpg.conf file with proper permissions if it doesn't exist
 touch ~/.gnupg/gpg.conf
@@ -132,6 +132,21 @@ chmod 600 ~/.gnupg/gpg.conf
 # If you're still having issues, try setting these options in gpg.conf
 echo "no-greeting" >> ~/.gnupg/gpg.conf
 echo "no-permission-warning" >> ~/.gnupg/gpg.conf
+
+# Detailed explanation of each command:
+# 1. mkdir -p ~/.gnupg - Creates the .gnupg directory if it doesn't exist
+# 2. sudo chown -R username:staff ~/.gnupg - Sets ownership to your user (replace 'username')
+#    If using a variable: USERNAME=$(whoami); echo $USERNAME  # To verify the variable
+#    If you get 'zsh: bad substitution' error, use your actual username instead of a variable
+# 3. chmod 700 ~/.gnupg - Sets directory permissions to rwx------ (only you can access)
+# 4. find ~/.gnupg -type f... - Sets all files to rw------- (only you can read/write)
+# 5. find ~/.gnupg -type d... - Sets all subdirectories to rwx------ (only you can access)
+# 6. touch ~/.gnupg/gpg.conf - Creates the config file if it doesn't exist
+# 7. chmod 600 ~/.gnupg/gpg.conf - Sets config file to rw------- (only you can read/write)
+# 8. echo commands - Add options to suppress warnings if permission fixes don't work
+
+# Alternative for zsh users experiencing 'bad substitution' errors:
+# sudo chown -R $(whoami):staff ~/.gnupg  # Run this as a single command
 
 # If pinentry doesn't appear or hangs
 # Restart the GPG agent and try again
