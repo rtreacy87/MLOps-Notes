@@ -7,7 +7,7 @@ echo "Setting up pass password manager on macOS..."
 if ! command -v brew &> /dev/null; then
     echo "Homebrew is not installed. Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    
+
     # Add Homebrew to PATH for Apple Silicon Macs if needed
     if [[ $(uname -m) == 'arm64' ]]; then
         echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
@@ -23,8 +23,22 @@ brew install pass gnupg pinentry-mac
 
 # Configure GPG to use pinentry-mac
 echo "Configuring GPG..."
+
+# Create the .gnupg directory if it doesn't exist
 mkdir -p ~/.gnupg
+
+# Set the correct ownership (get current user)
+CURRENT_USER=$(whoami)
+sudo chown -R "$CURRENT_USER:staff" ~/.gnupg
+
+# Set the correct permissions for the directory
 chmod 700 ~/.gnupg
+
+# Set the correct permissions for all files in the directory
+find ~/.gnupg -type f -exec chmod 600 {} \; 2>/dev/null || true
+
+# Set the correct permissions for all subdirectories
+find ~/.gnupg -type d -exec chmod 700 {} \; 2>/dev/null || true
 
 # Find pinentry-mac path
 PINENTRY_PATH=$(which pinentry-mac)
@@ -40,8 +54,15 @@ default-cache-ttl 3600
 max-cache-ttl 7200
 EOF
 
-# Set proper permissions
+# Create or update gpg.conf to prevent permission warnings
+touch ~/.gnupg/gpg.conf
+if ! grep -q "no-permission-warning" ~/.gnupg/gpg.conf; then
+    echo "no-permission-warning" >> ~/.gnupg/gpg.conf
+fi
+
+# Set proper permissions for all configuration files
 chmod 600 ~/.gnupg/gpg-agent.conf
+chmod 600 ~/.gnupg/gpg.conf
 
 # Restart GPG agent
 gpgconf --kill gpg-agent
@@ -55,10 +76,10 @@ if ! gpg --list-secret-keys | grep -q "sec"; then
     echo "For expiration, choose an appropriate value (0 = does not expire)."
     echo "Enter your name and email when prompted."
     echo "Set a secure passphrase when asked."
-    
+
     # Start key generation
     gpg --full-generate-key
-    
+
     if [ $? -ne 0 ]; then
         echo "Error: GPG key generation failed. Please try again manually with 'gpg --full-generate-key'."
         exit 1
@@ -80,7 +101,7 @@ fi
 if [ ! -d "$HOME/.password-store" ]; then
     echo "Initializing password store with key ID: $GPG_KEY_ID"
     pass init "$GPG_KEY_ID"
-    
+
     if [ $? -ne 0 ]; then
         echo "Error: Failed to initialize pass. Please try manually with:"
         echo "pass init \"$GPG_KEY_ID\""

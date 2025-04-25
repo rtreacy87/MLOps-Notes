@@ -107,10 +107,31 @@ pass git init
 # Check if your GPG key is available
 gpg --list-secret-keys
 
-# If you see "gpg: WARNING: unsafe permissions" error
-# Fix permissions on the .gnupg directory
+# If you see "gpg: WARNING: unsafe permissions on homedir '/Users/user_name/.gnupg'" error
+# This is a common issue on macOS. Fix permissions on the .gnupg directory with these commands:
+
+# Create the directory if it doesn't exist
+mkdir -p ~/.gnupg
+
+# Set the correct ownership (replace 'username' with your actual username)
+sudo chown -R username:staff ~/.gnupg
+
+# Set the correct permissions for the directory
 chmod 700 ~/.gnupg
-chmod 600 ~/.gnupg/*
+
+# Set the correct permissions for all files in the directory
+find ~/.gnupg -type f -exec chmod 600 {} \;
+
+# Set the correct permissions for all subdirectories
+find ~/.gnupg -type d -exec chmod 700 {} \;
+
+# Create a gpg.conf file with proper permissions if it doesn't exist
+touch ~/.gnupg/gpg.conf
+chmod 600 ~/.gnupg/gpg.conf
+
+# If you're still having issues, try setting these options in gpg.conf
+echo "no-greeting" >> ~/.gnupg/gpg.conf
+echo "no-permission-warning" >> ~/.gnupg/gpg.conf
 
 # If pinentry doesn't appear or hangs
 # Restart the GPG agent and try again

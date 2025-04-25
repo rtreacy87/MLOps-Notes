@@ -57,6 +57,35 @@ EOF
 gpgconf --kill gpg-agent
 ```
 
+##### Fixing "Unsafe Permissions" Warning on macOS
+
+If you see the warning `gpg: WARNING: unsafe permissions on homedir '/Users/your_username/.gnupg'`, run these commands to fix it:
+
+```bash
+# Set the correct ownership (replace with your username)
+CURRENT_USER=$(whoami)
+sudo chown -R "$CURRENT_USER:staff" ~/.gnupg
+
+# Set the correct permissions for the directory
+chmod 700 ~/.gnupg
+
+# Set the correct permissions for all files
+find ~/.gnupg -type f -exec chmod 600 {} \; 2>/dev/null || true
+
+# Set the correct permissions for all subdirectories
+find ~/.gnupg -type d -exec chmod 700 {} \; 2>/dev/null || true
+
+# Create a gpg.conf file with proper permissions
+touch ~/.gnupg/gpg.conf
+chmod 600 ~/.gnupg/gpg.conf
+
+# Add option to suppress permission warnings if they persist
+echo "no-permission-warning" >> ~/.gnupg/gpg.conf
+
+# Restart the GPG agent
+gpgconf --kill gpg-agent
+```
+
 ### Step 2: Generate a GPG Key Pair
 
 Before using `pass`, you need to create a GPG key pair:
