@@ -40,6 +40,52 @@ pass edit category/service/username
 pass rm category/service/username
 ```
 
+### Storing and Retrieving Usernames and Emails
+
+When storing usernames or emails, it's important to understand that `pass` expects you to enter the password/content after running the insert command, not as part of the command itself:
+
+```bash
+# INCORRECT way (this won't work):
+pass insert home/github/username person@email.com
+# This tries to create an entry named 'person@email.com' under home/github/username
+
+# CORRECT way:
+pass insert home/github/username
+# After running this command, you'll be prompted to enter the content
+# Type 'person@email.com' at the prompt and press Enter
+# Then confirm by typing it again
+
+# To verify it was stored correctly:
+pass home/github/username
+# This should display: person@email.com
+```
+
+**Example session:**
+
+```
+$ pass insert home/github/username
+Enter password for home/github/username: person@email.com
+Retype password for home/github/username: person@email.com
+
+$ pass home/github/username
+person@email.com
+```
+
+You can also store multiple lines of information using the multiline option:
+
+```bash
+# Store username, email, and notes in one entry
+pass insert -m home/github/full-info
+# Type or paste multiple lines:
+# username: johndoe
+# email: person@email.com
+# notes: This is my personal GitHub account
+# Press Ctrl+D when finished
+
+# Retrieve the information
+pass home/github/full-info
+```
+
 ### Working with Non-Password Data
 
 Pass can store any type of data, not just passwords:
@@ -84,11 +130,40 @@ The password store is organized hierarchically in a directory structure:
 # List all passwords with tree structure
 pass
 
+# View the password store structure with more details
+pass ls
+
+# View the structure with the system tree command (if installed)
+tree ~/.password-store
+
 # Find passwords containing a specific term
 pass find azure
 
 # Show the full path of a password
 pass show -c azure/subscription-key
+
+# Count the number of passwords in your store
+find ~/.password-store -name "*.gpg" | wc -l
+```
+
+Example output of `pass` or `pass ls` command:
+
+```
+Password Store
+├── personal
+│   ├── email
+│   │   ├── gmail
+│   │   └── outlook
+│   └── banking
+│       ├── chase
+│       └── wellsfargo
+└── work
+    ├── azure
+    │   ├── subscription-key
+    │   └── storage-account
+    └── aws
+        ├── access-key
+        └── secret-key
 ```
 
 ### Organizing Your Password Store
