@@ -274,6 +274,8 @@ Transfer these files to your Mac using a secure method:
 scp ~/gpg-*.* username@mac-hostname:~
 ```
 
+For detailed instructions on setting up SSH connections between different machines (Mac to WSL, WSL to WSL) and securely transferring GPG keys, see our [SSH Secure Transfer Guide](ssh-secure-transfer-wiki.md).
+
 **Option 2: Encrypted Archive**
 ```bash
 # Create an encrypted archive
