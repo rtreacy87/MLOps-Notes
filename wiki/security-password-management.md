@@ -41,26 +41,162 @@ Password managers provide a secure way to store, organize, and access credential
 
 `pass` is a lightweight, command-line password manager that follows the Unix philosophy. It uses GPG for encryption and Git for version control, making it ideal for developers and MLOps engineers.
 
-#### Setting Up Pass
+#### Setting Up Pass on Linux
 
 ```bash
-# Install pass
-# Ubuntu/Debian
-sudo apt-get install pass
-
-# macOS
-brew install pass
+# Install pass on Ubuntu/Debian
+sudo apt-get install pass gnupg2
 
 # Generate a GPG key if you don't have one
 gpg --full-generate-key
 # Follow the prompts to create a key
 # Recommended: 4096-bit RSA key
 
+# Get your GPG key ID
+gpg --list-secret-keys --keyid-format LONG
+# Look for a line like: sec   rsa4096/1A2B3C4D5E6F7G8H
+# The part after the slash is your key ID
+
 # Initialize pass with your GPG key ID
 pass init "your-gpg-key-id"
 
 # Optional: Set up Git integration
 pass git init
+```
+
+#### Setting Up Pass on macOS
+
+```bash
+# Install required packages using Homebrew
+brew install pass gnupg pinentry-mac
+
+# Configure GPG to use the macOS pinentry program
+mkdir -p ~/.gnupg
+cat > ~/.gnupg/gpg-agent.conf << EOF
+pinentry-program /opt/homebrew/bin/pinentry-mac
+default-cache-ttl 600
+max-cache-ttl 7200
+EOF
+
+# Restart the GPG agent
+gpgconf --kill gpg-agent
+
+# Generate a GPG key if you don't have one
+gpg --full-generate-key
+# Follow the prompts to create a key
+# Recommended: 4096-bit RSA key
+
+# Get your GPG key ID
+gpg --list-secret-keys --keyid-format LONG
+# Look for a line like: sec   rsa4096/1A2B3C4D5E6F7G8H
+# The part after the slash is your key ID
+
+# Initialize pass with your GPG key ID
+pass init "your-gpg-key-id"
+
+# Optional: Set up Git integration
+pass git init
+```
+
+> **Note for Apple Silicon Macs**: If you're using an M1/M2 Mac, the pinentry-mac path might be different. Use `which pinentry-mac` to find the correct path and update the gpg-agent.conf file accordingly.
+
+#### Troubleshooting Pass on macOS
+
+```bash
+# If you encounter "gpg: decryption failed: No secret key" error
+# Check if your GPG key is available
+gpg --list-secret-keys
+
+# If you see "gpg: WARNING: unsafe permissions" error
+# Fix permissions on the .gnupg directory
+chmod 700 ~/.gnupg
+chmod 600 ~/.gnupg/*
+
+# If pinentry doesn't appear or hangs
+# Restart the GPG agent and try again
+gpgconf --kill gpg-agent
+gpg-agent --daemon
+
+# If you're having issues with the GPG key cache
+# Edit the gpg-agent.conf file to increase cache time
+echo "default-cache-ttl 3600" >> ~/.gnupg/gpg-agent.conf
+echo "max-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
+gpgconf --kill gpg-agent
+
+# If you're using iTerm2 and having issues
+# Enable the "Allow clipboard access to terminal apps" option in iTerm2 preferences
+```
+
+#### Creating a macOS Setup Script
+
+Create a script to automate the setup process on macOS:
+
+```bash
+#!/bin/bash
+# Save as setup-pass-macos.sh
+
+# Check if Homebrew is installed
+if ! command -v brew &> /dev/null; then
+    echo "Homebrew is not installed. Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+    echo "Homebrew is already installed."
+fi
+
+# Install required packages
+echo "Installing required packages..."
+brew install pass gnupg pinentry-mac
+
+# Configure GPG to use pinentry-mac
+echo "Configuring GPG..."
+mkdir -p ~/.gnupg
+chmod 700 ~/.gnupg
+
+# Find pinentry-mac path
+PINENTRY_PATH=$(which pinentry-mac)
+
+# Create or update gpg-agent.conf
+cat > ~/.gnupg/gpg-agent.conf << EOF
+pinentry-program $PINENTRY_PATH
+default-cache-ttl 3600
+max-cache-ttl 7200
+EOF
+
+# Restart GPG agent
+gpgconf --kill gpg-agent
+
+# Check if GPG key exists
+if ! gpg --list-secret-keys | grep -q "sec"; then
+    echo "No GPG key found. You need to create one."
+    echo "Run: gpg --full-generate-key"
+    echo "Use RSA and RSA, 4096 bits, and set an expiration if desired."
+    echo "After creating the key, run: gpg --list-secret-keys --keyid-format LONG"
+    echo "Then initialize pass with: pass init \"YOUR_GPG_KEY_ID\""
+else
+    echo "GPG key found. Getting key ID..."
+    GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+
+    # Initialize pass if not already initialized
+    if [ ! -d "$HOME/.password-store" ]; then
+        echo "Initializing pass with key ID: $GPG_KEY_ID"
+        pass init "$GPG_KEY_ID"
+    else
+        echo "Pass is already initialized."
+    fi
+
+    # Set up Git for pass
+    echo "Setting up Git for pass..."
+    pass git init
+
+    echo "Setup complete! Your GPG key ID is: $GPG_KEY_ID"
+fi
+```
+
+Make the script executable and run it:
+
+```bash
+chmod +x setup-pass-macos.sh
+./setup-pass-macos.sh
 ```
 
 #### Basic Pass Usage
@@ -127,6 +263,60 @@ pass azure/service-principal > temp_creds.json
 chmod 600 temp_creds.json  # Restrict permissions
 # Use the file
 rm temp_creds.json  # Delete immediately after use
+```
+
+#### Integrating Pass with macOS Applications
+
+You can integrate `pass` with various macOS applications and services for a more seamless experience:
+
+##### 1. Pass for macOS
+
+There's a native macOS GUI application for `pass` called [Pass for macOS](https://github.com/adur1990/Pass-for-macOS):
+
+```bash
+# Install Pass for macOS using Homebrew
+brew install --cask pass-for-macos
+```
+
+This provides:
+- A macOS menu bar application for accessing passwords
+- Integration with macOS autofill system
+- Browser integration via companion extension
+
+##### 2. Alfred Integration
+
+If you use Alfred, you can install the [Pass workflow](https://github.com/AlexanderWillner/alfred-pass):
+
+```bash
+# Download and install the workflow
+curl -L https://github.com/AlexanderWillner/alfred-pass/releases/latest/download/Pass.alfredworkflow -o Pass.alfredworkflow
+open Pass.alfredworkflow
+```
+
+This allows you to search and copy passwords directly from Alfred.
+
+##### 3. Raycast Integration
+
+For Raycast users, there's a [Pass extension](https://www.raycast.com/raycast/pass):
+
+1. Open Raycast
+2. Search for "Extensions"
+3. Search for "Pass"
+4. Install the extension
+
+##### 4. Using Pass with Safari and Chrome
+
+With Pass for macOS installed, you can use the browser extensions:
+
+- For Safari: Enable the extension in Safari preferences
+- For Chrome: Install the [browserpass extension](https://github.com/browserpass/browserpass-extension)
+
+```bash
+# Install the native host app for browserpass
+brew install browserpass
+
+# Configure the native host app
+/opt/homebrew/opt/browserpass/bin/browserpass-setup
 ```
 
 ### Other Password Management Options
@@ -344,7 +534,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # Remove specific lines from history
    history -d <line_number>
-   
+
    # Or use HISTCONTROL to prevent commands from being saved
    HISTCONTROL=ignorespace
     az login --service-principal -u "id" -p "secret"  # Note the space before the command
@@ -356,7 +546,7 @@ az keyvault set-policy --name "ml-key-vault" \
    pass azure/credentials > creds.json
    az login --file creds.json
    rm creds.json
-   
+
    # Use:
    az login --file <(pass azure/credentials)
    ```
@@ -388,7 +578,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # Install secure deletion tools
    sudo apt-get install secure-delete
-   
+
    # Securely delete a file
    srm ~/.azure/old-credentials.json
    ```
@@ -399,7 +589,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # Generate an SSH key with a passphrase
    ssh-keygen -t ed25519 -C "your_email@example.com"
-   
+
    # Use ssh-agent to avoid typing the passphrase repeatedly
    eval "$(ssh-agent -s)"
    ssh-add ~/.ssh/id_ed25519
@@ -436,12 +626,12 @@ az keyvault set-policy --name "ml-key-vault" \
    git clone https://github.com/awslabs/git-secrets.git
    cd git-secrets
    sudo make install
-   
+
    # Set up git-secrets in your repository
    cd your-repository
    git secrets --install
    git secrets --register-aws
-   
+
    # Add custom patterns
    git secrets --add 'private_key'
    git secrets --add 'api[_-]key'
@@ -452,7 +642,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # Install pre-commit
    pip install pre-commit
-   
+
    # Create a pre-commit configuration
    cat > .pre-commit-config.yaml << EOF
    repos:
@@ -462,7 +652,7 @@ az keyvault set-policy --name "ml-key-vault" \
      - id: detect-private-key
      - id: detect-aws-credentials
    EOF
-   
+
    # Install the hooks
    pre-commit install
    ```
@@ -473,7 +663,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # List all stored credentials
    pass
-   
+
    # Check for expired credentials
    for cred in $(pass find azure | grep -v "Search"); do
      echo "Checking $cred"
@@ -485,7 +675,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # Check Azure activity logs
    az monitor activity-log list --start-time 2023-01-01T00:00:00Z
-   
+
    # Check Key Vault access
    az monitor diagnostic-settings list --resource $(az keyvault show --name "ml-key-vault" --query id -o tsv)
    ```
@@ -494,7 +684,7 @@ az keyvault set-policy --name "ml-key-vault" \
    ```bash
    # Rotate service principal credentials
    az ad sp credential reset --name "ml-service-principal"
-   
+
    # Update stored credentials
    pass edit azure/ml-service-principal
    ```

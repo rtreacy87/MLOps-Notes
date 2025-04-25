@@ -22,6 +22,8 @@ This guide covers how to set up `pass`, the standard Unix password manager, for 
 
 ### Step 1: Install Required Packages
 
+#### For WSL/Ubuntu
+
 Run the following commands in your WSL Ubuntu terminal:
 
 ```bash
@@ -30,6 +32,29 @@ sudo apt update
 
 # Install pass and its dependencies
 sudo apt install -y pass gnupg2
+```
+
+#### For macOS
+
+Run the following commands in your macOS terminal:
+
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install pass and its dependencies
+brew install pass gnupg pinentry-mac
+
+# Configure GPG to use the macOS pinentry program
+mkdir -p ~/.gnupg
+cat > ~/.gnupg/gpg-agent.conf << EOF
+pinentry-program $(which pinentry-mac)
+default-cache-ttl 600
+max-cache-ttl 7200
+EOF
+
+# Restart the GPG agent
+gpgconf --kill gpg-agent
 ```
 
 ### Step 2: Generate a GPG Key Pair
@@ -68,7 +93,9 @@ pass init "YOUR_GPG_KEY_ID"
 
 ### Step 4: Create a Script to Set Up Pass
 
-Create an automated setup script for `pass`:
+#### For WSL/Ubuntu
+
+Create an automated setup script for `pass` on Ubuntu/WSL:
 
 ```bash
 #!/bin/bash
@@ -138,6 +165,30 @@ Make the script executable and run it:
 chmod +x setup-pass.sh
 ./setup-pass.sh
 ```
+
+#### For macOS
+
+We've created a dedicated setup script for macOS users. You can find it at `scripts/setup-pass-macos.sh` in this repository. Here's how to use it:
+
+```bash
+# Navigate to the scripts directory
+cd scripts
+
+# Make the script executable if it's not already
+chmod +x setup-pass-macos.sh
+
+# Run the script
+./setup-pass-macos.sh
+```
+
+The script will:
+1. Install Homebrew if needed
+2. Install pass, GPG, and pinentry-mac
+3. Configure GPG to use the macOS pinentry program
+4. Generate a GPG key if you don't have one
+5. Initialize pass with your GPG key
+6. Optionally install the Pass for macOS GUI application
+7. Optionally set up browser integration
 
 ## Using Pass for API Keys and Credentials
 
