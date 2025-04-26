@@ -114,7 +114,33 @@ ssh-add ~/.ssh/id_ed25519
 
 2. Go to GitHub.com → Settings → SSH and GPG keys
 3. Click "New SSH key"
-4. Paste the entire key (all of it from step 1) and save
+4. Give your key a descriptive title that identifies the device and environment
+5. Paste the entire key (all of it from step 1) and save
+
+#### Example: Naming SSH Keys in GitHub
+
+When adding multiple SSH keys to GitHub, use descriptive names that help you identify which device and environment each key belongs to. This makes it easier to manage and revoke keys if needed.
+
+**Example scenario:**
+
+- You have a Mac with SSH key already stored in GitHub as "Mac SSH Key"
+- You're now setting up a new key for WSL on your Windows machine
+- The WSL username is "adam"
+- The machine's IP address is 192.55.55.555
+
+**Recommended naming convention:**
+
+```
+WSL-Windows-adam@192.55.55.555
+```
+
+This name clearly indicates:
+- The environment (WSL)
+- The host OS (Windows)
+- The username (adam)
+- The IP address (192.55.55.555)
+
+With this naming scheme, you can easily identify which key belongs to which environment when viewing your keys in GitHub settings. If your device is lost or compromised, you can quickly identify and revoke the specific key without affecting your access from other devices.
 
 ### Step 4: Update Remote URL
 
