@@ -8,6 +8,7 @@ This guide explains how to set up SSH connections between different machines for
 - [Setting Up SSH Keys](#setting-up-ssh-keys)
 - [Mac to WSL Ubuntu Connection](#mac-to-wsl-ubuntu-connection)
 - [WSL to WSL Connection](#wsl-to-wsl-connection)
+- [Using GitHub to Transfer SSH Keys](#using-github-to-transfer-ssh-keys)
 - [Transferring GPG Keys Securely](#transferring-gpg-keys-securely)
 - [Troubleshooting](#troubleshooting)
 
@@ -161,6 +162,162 @@ ssh username@TARGET_IP
 # If successful, you should be logged in without a password prompt
 ```
 
+## Using GitHub to Transfer SSH Keys
+
+If you already have SSH keys stored in your GitHub account, you can use them to establish connections between your machines. This is particularly useful for setting up SSH between a Mac and WSL environment.
+
+### Prerequisites
+
+- SSH keys already uploaded to your GitHub account
+- Access to both machines (Mac and WSL)
+- GitHub account access
+
+### Step 1: Retrieve the Public Key from GitHub
+
+1. Log in to your GitHub account
+2. Go to Settings → SSH and GPG keys
+3. Find the key you want to use (e.g., "Mac SSH Key")
+4. Click on the key to view its details
+5. Copy the entire public key content
+
+### Step 2: Set Up the Target Machine (WSL)
+
+```bash
+# Create .ssh directory if it doesn't exist
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Create or open the authorized_keys file
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Add the GitHub-stored public key to authorized_keys
+# Replace with the actual key you copied from GitHub
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... myemail@email.com" >> ~/.ssh/authorized_keys
+```
+
+### Example: Using Mac's SSH Key for WSL Access
+
+**Scenario:**
+- You have a Mac with SSH key already stored in GitHub as "Mac SSH Key"
+- You want to set up SSH access from this Mac to your WSL environment
+- The WSL username is "adam"
+- The WSL machine's IP address is 192.55.55.555
+
+#### Method 1: Using GitHub Web Interface
+
+**On GitHub:**
+1. Go to your GitHub account → Settings → SSH and GPG keys
+2. Find the entry labeled "Mac SSH Key"
+3. Click on it and copy the entire public key
+
+**On WSL (as user adam):**
+```bash
+# Ensure .ssh directory exists with proper permissions
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Add the Mac's public key to authorized_keys
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... copied-key-from-github" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Start SSH server if not already running
+sudo service ssh start
+
+# Get your WSL IP address to provide to the Mac user
+ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+# This should show 192.55.55.555
+```
+
+**On Mac:**
+```bash
+# Test the connection
+ssh adam@192.55.55.555
+
+# If you want to make it easier to connect, add an entry to ~/.ssh/config
+echo "Host wsl-adam
+    HostName 192.55.55.555
+    User adam
+    IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
+
+# Now you can connect simply with
+ssh wsl-adam
+```
+
+#### Method 2: Using Command Line Only
+
+**On WSL (as user adam):**
+
+```bash
+# Ensure .ssh directory exists with proper permissions
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Install curl if not already installed
+sudo apt update && sudo apt install -y curl jq
+
+# Fetch the public key from GitHub API (replace USERNAME with your GitHub username)
+GITHUB_USERNAME="your-github-username"
+
+# List all SSH keys to find the one you want
+curl -s https://api.github.com/users/$GITHUB_USERNAME/keys | jq -r '.[] | "ID: \(.id), Title: \(.title)"'
+
+# Get a specific key by ID (replace KEY_ID with the ID from the list above)
+KEY_ID="12345678"  # Replace with actual key ID
+curl -s https://api.github.com/users/$GITHUB_USERNAME/keys | jq -r ".[] | select(.id == $KEY_ID) | .key" > ~/.ssh/github_mac_key.pub
+
+# Or, if you know the exact title of your key (e.g., "Mac SSH Key")
+KEY_TITLE="Mac SSH Key"  # Replace with your actual key title if needed
+curl -s https://api.github.com/users/$GITHUB_USERNAME/keys | jq -r ".[] | select(.title == \"$KEY_TITLE\") | .key" > ~/.ssh/github_mac_key.pub
+
+# Add the key to authorized_keys
+cat ~/.ssh/github_mac_key.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Clean up
+rm ~/.ssh/github_mac_key.pub
+
+# Start SSH server if not already running
+sudo service ssh start
+
+# Get your WSL IP address to provide to the Mac user
+ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+# This should show 192.55.55.555
+```
+
+**On Mac:**
+```bash
+# Test the connection
+ssh adam@192.55.55.555
+
+# If you want to make it easier to connect, add an entry to ~/.ssh/config
+cat >> ~/.ssh/config << EOF
+Host wsl-adam
+    HostName 192.55.55.555
+    User adam
+    IdentityFile ~/.ssh/id_ed25519
+EOF
+
+# Now you can connect simply with
+ssh wsl-adam
+```
+
+**Note:** The GitHub API method only works for public keys that are publicly visible on your GitHub profile. If your keys are not public, you'll need to use the web interface method or directly copy the key from your Mac.
+
+### Benefits of Using GitHub for Key Transfer
+
+1. **No direct machine-to-machine transfer needed**: Useful when direct access between machines is difficult
+2. **Verified keys**: You're using keys that are already working with GitHub
+3. **Convenience**: No need to generate new keys if you already have them in GitHub
+4. **Documentation**: Your GitHub account serves as documentation of which keys exist
+
+### Security Considerations
+
+1. **GitHub as intermediary**: Remember that GitHub has seen your public key (not the private key)
+2. **Key naming**: Use descriptive names in GitHub (e.g., "WSL-Windows-adam@192.55.55.555") to track where keys are used
+3. **Key rotation**: Consider rotating keys periodically for better security
+4. **Revocation**: If a device is lost, revoke its key from both GitHub and any machines where you've authorized it
+
 ## Transferring GPG Keys Securely
 
 Once you have SSH set up between your machines, you can securely transfer GPG keys.
@@ -259,7 +416,7 @@ rm ~/gpg-public-key.asc ~/gpg-ownertrust.txt
    ```bash
    # Securely delete private key file
    shred -u ~/gpg-private-key.asc
-   
+
    # Remove other files
    rm ~/gpg-public-key.asc ~/gpg-ownertrust.txt
    ```
