@@ -318,6 +318,177 @@ ssh wsl-adam
 3. **Key rotation**: Consider rotating keys periodically for better security
 4. **Revocation**: If a device is lost, revoke its key from both GitHub and any machines where you've authorized it
 
+### Troubleshooting Mac to WSL Connection Issues
+
+#### Terminal Hangs or Blanks Out When Connecting
+
+If your terminal just blanks out or hangs without an error message when trying to connect from Mac to WSL, try these solutions:
+
+1. **Check SSH Server Status on WSL**
+   ```bash
+   # On WSL
+   sudo service ssh status
+
+   # If not running, start it
+   sudo service ssh start
+   ```
+
+2. **Verify Network Connectivity**
+   ```bash
+   # On Mac
+   ping 192.55.55.555  # Replace with your WSL IP
+
+   # If ping doesn't work, WSL might be using a different network interface
+   # On WSL, check all interfaces
+   ip addr
+   ```
+
+   **If ping fails with 100% packet loss:**
+
+   This indicates a network connectivity issue between your Mac and WSL. Here's how to resolve it:
+
+   a) **Check WSL Network Configuration**
+   ```bash
+   # On Windows PowerShell
+   wsl --shutdown
+
+   # Edit .wslconfig file to ensure proper network setup
+   notepad "$env:USERPROFILE\.wslconfig"
+   ```
+
+   Add or modify these lines in the .wslconfig file:
+   ```
+   [wsl2]
+   networkingMode=bridged
+   vmSwitch=External Switch
+   ```
+
+   b) **Configure Port Forwarding in Windows**
+
+   WSL2 runs in a virtual machine with its own network, so you need to set up port forwarding:
+   ```powershell
+   # In Windows PowerShell (as Administrator)
+   # Get WSL IP address
+   $wslIP = (wsl hostname -I).Trim()
+
+   # Set up port forwarding for SSH (port 22)
+   netsh interface portproxy add v4tov4 listenport=22 listenaddress=0.0.0.0 connectport=22 connectaddress=$wslIP
+
+   # Allow the port through Windows Firewall
+   New-NetFirewallRule -DisplayName "WSL SSH" -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow
+   ```
+
+   c) **Use Windows Host IP Instead**
+
+   Instead of trying to connect directly to the WSL IP, connect to your Windows host IP:
+   ```bash
+   # On Windows, find your IP address
+   ipconfig
+
+   # Look for the IPv4 Address under your main network adapter
+   # (e.g., 192.168.1.100)
+
+   # On Mac, connect to the Windows IP instead
+   ssh adam@192.168.1.100
+   ```
+
+   d) **Check VPN Interference**
+
+   If you're using a VPN on either machine, try disconnecting it temporarily as VPNs can interfere with local network routing.
+
+3. **Check WSL IP Address Changes**
+   WSL IP addresses can change after restarts. Verify the current IP:
+   ```bash
+   # On WSL
+   ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+   ```
+
+4. **Enable Verbose SSH Output**
+   ```bash
+   # On Mac - use increasing verbosity (-v, -vv, or -vvv)
+   ssh -vvv adam@192.55.55.555
+   ```
+   This will show detailed connection steps and help identify where it's hanging.
+
+5. **Check Windows Firewall Settings**
+   Windows Firewall might be blocking the connection:
+   ```powershell
+   # In Windows PowerShell (as Administrator)
+   New-NetFirewallRule -DisplayName "WSL SSH" -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow
+   ```
+
+6. **Try Different SSH Port**
+   If port 22 is blocked or has issues:
+   ```bash
+   # On WSL - Edit SSH config
+   sudo nano /etc/ssh/sshd_config
+   # Change: #Port 22 to Port 2222
+
+   # Restart SSH
+   sudo service ssh restart
+
+   # On Mac
+   ssh -p 2222 adam@192.55.55.555
+   ```
+
+7. **Check SSH Key Permissions**
+   ```bash
+   # On Mac
+   chmod 600 ~/.ssh/id_ed25519
+   chmod 644 ~/.ssh/id_ed25519.pub
+   ```
+
+8. **Verify authorized_keys File**
+   ```bash
+   # On WSL
+   cat ~/.ssh/authorized_keys
+   # Make sure your Mac's public key is listed correctly
+   ```
+
+9. **Try Password Authentication Temporarily**
+   ```bash
+   # On WSL - Edit SSH config
+   sudo nano /etc/ssh/sshd_config
+   # Ensure these lines are set:
+   # PasswordAuthentication yes
+   # PubkeyAuthentication yes
+
+   # Restart SSH
+   sudo service ssh restart
+
+   # On Mac
+   ssh -o PreferredAuthentications=password adam@192.55.55.555
+   ```
+
+10. **Check WSL Version and Networking Mode**
+    ```bash
+    # On Windows PowerShell
+    wsl --list --verbose
+
+    # If using WSL1, consider upgrading to WSL2
+    wsl --set-version Ubuntu 2
+    ```
+
+11. **Restart WSL and SSH Services**
+    ```powershell
+    # In Windows PowerShell
+    wsl --shutdown
+
+    # Then restart WSL and SSH
+    wsl -d Ubuntu
+    sudo service ssh restart
+    ```
+
+12. **Check SSH Client Configuration on Mac**
+    ```bash
+    # On Mac
+    cat ~/.ssh/config
+
+    # Make sure there are no conflicting entries for the WSL host
+    ```
+
+If you've tried these steps and still have issues, the problem might be related to specific WSL networking configurations or Windows settings. Consider checking the WSL GitHub issues page for similar problems and solutions.
+
 ## Transferring GPG Keys Securely
 
 Once you have SSH set up between your machines, you can securely transfer GPG keys.
