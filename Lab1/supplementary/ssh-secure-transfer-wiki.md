@@ -350,33 +350,52 @@ If your terminal just blanks out or hangs without an error message when trying t
    a) **Check WSL Network Configuration**
    ```bash
    # On Windows PowerShell
+   # This command shuts down all running WSL instances to apply network changes
    wsl --shutdown
 
-   # Edit .wslconfig file to ensure proper network setup
+   # Edit .wslconfig file to configure WSL networking
+   # This file is located in your Windows user profile directory
    notepad "$env:USERPROFILE\.wslconfig"
    ```
 
-   Add or modify these lines in the .wslconfig file:
+   For WSL networking, use the default configuration or consider these options:
    ```
    [wsl2]
-   networkingMode=bridged
-   vmSwitch=External Switch
+   # Default networking mode (NAT) is recommended for most users
+   # Do NOT use bridged mode as it's now deprecated
+   ```
+
+   **IMPORTANT NOTE:** The following configuration is **DEPRECATED** and may break your WSL networking:
+   ```
+   # DO NOT USE - This configuration is deprecated and may break WSL
+   # [wsl2]
+   # networkingMode=bridged
+   # vmSwitch=External Switch
    ```
 
    b) **Configure Port Forwarding in Windows**
 
-   WSL2 runs in a virtual machine with its own network, so you need to set up port forwarding:
+   WSL2 runs in a virtual machine with its own network, so you need to set up port forwarding to make SSH accessible from outside Windows:
    ```powershell
    # In Windows PowerShell (as Administrator)
-   # Get WSL IP address
+
+   # This command gets the current IP address of your WSL instance
+   # It runs the 'hostname -I' command in WSL and trims whitespace
    $wslIP = (wsl hostname -I).Trim()
 
-   # Set up port forwarding for SSH (port 22)
+   # This command sets up port forwarding from your Windows host to the WSL instance
+   # - listenport=22: Windows will listen on port 22
+   # - listenaddress=0.0.0.0: Listen on all network interfaces
+   # - connectport=22: Forward to port 22 on the WSL instance
+   # - connectaddress=$wslIP: The WSL instance's IP address
    netsh interface portproxy add v4tov4 listenport=22 listenaddress=0.0.0.0 connectport=22 connectaddress=$wslIP
 
-   # Allow the port through Windows Firewall
+   # This command creates a Windows Firewall rule to allow incoming SSH connections
+   # It allows TCP traffic on port 22 from any source
    New-NetFirewallRule -DisplayName "WSL SSH" -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow
    ```
+
+   **Note:** If you get an error with the `$wslIP = (wsl hostname -I).Trim()` command, it may indicate that your WSL networking is not properly configured. Try restarting WSL with `wsl --shutdown` and then starting it again.
 
    c) **Use Windows Host IP Instead**
 
@@ -551,6 +570,113 @@ rm ~/gpg-public-key.asc ~/gpg-ownertrust.txt
 ```
 
 ## Troubleshooting
+
+### Quick Fix for Broken WSL Networking
+
+If you've encountered errors like "Bridged networking mode has been deprecated" and "Failed to configure network, falling back to networkingMode None" after modifying your .wslconfig file, here's a quick fix:
+
+```powershell
+# Run these commands in Windows PowerShell
+
+# 1. Shut down all WSL instances
+wsl --shutdown
+
+# 2. Fix the .wslconfig file
+echo "[wsl2]`n# Default networking settings" > "$env:USERPROFILE\.wslconfig"
+
+# 3. Restart WSL
+wsl
+
+# 4. Verify networking is working
+wsl -- ip addr
+wsl -- ping -c 4 google.com
+```
+
+This will reset your WSL networking to the default configuration, which should restore connectivity.
+
+### WSL Networking Issues
+
+1. **"Bridged networking mode has been deprecated" error**:
+   - This error occurs when using outdated WSL networking configuration
+   - Solution:
+     ```powershell
+     # On Windows PowerShell
+     wsl --shutdown
+
+     # Edit .wslconfig file to remove deprecated settings
+     notepad "$env:USERPROFILE\.wslconfig"
+     ```
+
+     Remove or comment out these lines:
+     ```
+     # [wsl2]
+     # networkingMode=bridged
+     # vmSwitch=External Switch
+     ```
+
+     Use the default configuration instead:
+     ```
+     [wsl2]
+     # Use default networking settings
+     ```
+
+2. **"The VmSwitch was not found" error**:
+   - This occurs when specifying a non-existent Hyper-V switch
+   - To see available switches:
+     ```powershell
+     # On Windows PowerShell
+     Get-VMSwitch | Select-Object Name
+     ```
+   - Solution: Remove the vmSwitch line from .wslconfig or use an existing switch name
+
+3. **"Failed to configure network, falling back to networkingMode None" error**:
+   - This indicates WSL couldn't apply your network settings and disabled networking
+   - Solution: Remove custom networking settings from .wslconfig and restart WSL:
+     ```powershell
+     # Shut down all WSL instances
+     wsl --shutdown
+
+     # Create a new .wslconfig file with minimal settings
+     # This will overwrite the existing file
+     echo "[wsl2]`n# Use default networking settings" > "$env:USERPROFILE\.wslconfig"
+
+     # Restart your WSL distribution
+     wsl -d Ubuntu  # Or your distribution name
+     ```
+
+4. **Fixing a completely broken WSL networking configuration**:
+   - If you've already applied problematic settings and WSL networking is broken:
+     ```powershell
+     # Step 1: Shut down all WSL instances
+     wsl --shutdown
+
+     # Step 2: Completely remove the .wslconfig file
+     Remove-Item "$env:USERPROFILE\.wslconfig" -Force
+
+     # Step 3: Create a new minimal .wslconfig file
+     echo "[wsl2]`n# Default networking configuration" > "$env:USERPROFILE\.wslconfig"
+
+     # Step 4: Restart WSL
+     wsl
+
+     # Step 5: Verify networking is working
+     wsl -- ip addr
+     wsl -- ping -c 4 google.com
+     ```
+
+   - If networking is still not working, you may need to reset WSL completely:
+     ```powershell
+     # WARNING: This will reset all WSL distributions and you'll lose all data in them
+     # Only use as a last resort
+
+     # List all WSL distributions first
+     wsl --list --verbose
+
+     # Unregister a specific distribution (replace Ubuntu with your distribution name)
+     wsl --unregister Ubuntu
+
+     # Then reinstall from the Microsoft Store
+     ```
 
 ### Connection Issues
 
