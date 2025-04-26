@@ -20,6 +20,8 @@ This guide covers how to set up `pass`, the standard Unix password manager, for 
 
 For a comprehensive guide on using `pass` effectively, including synchronization across devices, browser integration, mobile access, and automation, see our [Pass Workflow Guide](supplementary/pass-workflow-wiki.md).
 
+To compare `pass` with other password management solutions (Bitwarden, 1Password, KeePassXC, HashiCorp Vault, etc.) and determine which is best for your needs, see our [Password Manager Comparison Guide](supplementary/password-manager-comparison-wiki.md).
+
 ## Installation and Setup
 
 ### Step 1: Install Required Packages
